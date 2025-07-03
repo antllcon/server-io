@@ -5,3 +5,35 @@
 ### Статус разработки
 
 Пока не понял...
+
+### Структура проекта
+
+```
+src/
+├── main/
+│   ├── kotlin/
+│   │   ├── config/               # Конфигурационные классы
+│   │   │   └── WebSocketConfig.kt  # Настройки WebSocket (ping, таймауты)
+│   │   │
+│   │   ├── controller/           # Обработчики запросов
+│   │   │   └── GameController.kt   # Основная логика WebSocket-обработчика
+│   │   │
+│   │   ├── manager/              # Менеджеры состояний
+│   │   │   └── GameRoomManager.kt  # Singleton для управления комнатами
+│   │   │
+│   │   ├── model/                # Модели данных
+│   │   │   ├── Player.kt           # data class Player
+│   │   │   └── GameRoom.kt         # data class GameRoom
+│   │   │
+│   │   ├── routes/               # Маршруты
+│   │   │   └── GameRoutes.kt       # Регистрация эндпоинтов (/game)
+│   │   │
+│   │   ├── service/              # Бизнес-логика
+│   │   │   └── RoomService.kt      # Функции работы с комнатами (broadcast и т.д.)
+│   │   │
+│   │   └── Application.kt        # Файл инициализации
+│   │
+│   └── resources/                # Ресурсы 
+│
+└── test/                         # Тесты
+```
