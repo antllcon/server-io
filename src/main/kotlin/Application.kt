@@ -4,7 +4,7 @@ import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import mobility.routes.configureRouting
-import mobility.service.configureWebSockets
+import mobility.config.configureWebSockets
 
 
 fun main() {

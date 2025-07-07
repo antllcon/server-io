@@ -1,4 +1,4 @@
-package mobility.service
+package mobility.config
 
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
