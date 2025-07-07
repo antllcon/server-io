@@ -1,5 +1,6 @@
 package mobility.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
@@ -25,6 +26,7 @@ enum class ServerMessageType {
 
 @Serializable
 sealed class WebSocketMessage {
+    @SerialName("type")
     abstract val type: Enum<*>
 }
 
