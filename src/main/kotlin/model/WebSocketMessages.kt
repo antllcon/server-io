@@ -2,8 +2,8 @@ package mobility.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
 
+// Enums remain the same
 enum class ClientMessageType {
     INIT_PLAYER,
     CREATE_ROOM,
@@ -25,93 +25,96 @@ enum class ServerMessageType {
 }
 
 @Serializable
-sealed class WebSocketMessage {
-    @SerialName("type")
-    abstract val type: Enum<*>
+sealed interface ClientMessage {
+    val type: ClientMessageType
 }
 
 @Serializable
-data class ClientMessage(
-    override val type: ClientMessageType,
-    val data: JsonElement? = null
-) : WebSocketMessage()
-
-@Serializable
-data class InitPlayerRequest(val name: String) : WebSocketMessage() {
-    override val type: ClientMessageType = ClientMessageType.INIT_PLAYER
+@SerialName("INIT_PLAYER")
+data class InitPlayerRequest(val name: String) : ClientMessage {
+    override val type: ClientMessageType get() = ClientMessageType.INIT_PLAYER
 }
 
 @Serializable
-data class CreateRoomRequest(val name: String) : WebSocketMessage() {
-    override val type: ClientMessageType = ClientMessageType.CREATE_ROOM
+@SerialName("CREATE_ROOM")
+data class CreateRoomRequest(val name: String) : ClientMessage {
+    override val type: ClientMessageType get() = ClientMessageType.CREATE_ROOM
 }
 
 @Serializable
-data class JoinRoomRequest(val name: String) : WebSocketMessage() {
-    override val type: ClientMessageType = ClientMessageType.JOIN_ROOM
+@SerialName("JOIN_ROOM")
+data class JoinRoomRequest(val name: String) : ClientMessage {
+    override val type: ClientMessageType get() = ClientMessageType.JOIN_ROOM
+}
+
+// This message needs no data from the client, so it can be an 'object'.
+@Serializable
+@SerialName("LEAVE_ROOM")
+object LeaveRoomRequest : ClientMessage {
+    override val type: ClientMessageType get() = ClientMessageType.LEAVE_ROOM
 }
 
 @Serializable
-data class LeaveRoomRequest(val name: String) : WebSocketMessage() {
-    override val type: ClientMessageType = ClientMessageType.LEAVE_ROOM
+@SerialName("PLAYER_ACTION")
+data class PlayerActionRequest(val name: String) : ClientMessage {
+    override val type: ClientMessageType get() = ClientMessageType.PLAYER_ACTION
 }
 
 @Serializable
-data class PlayerActionRequest(val name: String) : WebSocketMessage() {
-    override val type: ClientMessageType = ClientMessageType.PLAYER_ACTION
+sealed interface ServerMessage {
+    val type: ServerMessageType
 }
 
 @Serializable
-data class ServerMessage(
-    override val type: ServerMessageType,
-    val data: JsonElement? = null
-) : WebSocketMessage()
-
-@Serializable
-data class PlayerConnectedResponse(val playerId: String, val playerName: String) : WebSocketMessage() {
-    override val type: ServerMessageType = ServerMessageType.PLAYER_CONNECTED
+@SerialName("PLAYER_CONNECTED")
+data class PlayerConnectedResponse(val playerId: String, val playerName: String) : ServerMessage {
+    override val type: ServerMessageType get() = ServerMessageType.PLAYER_CONNECTED
 }
 
 @Serializable
-data class PlayerDisconnectedResponse(val playerId: String) : WebSocketMessage() {
-    override val type: ServerMessageType = ServerMessageType.PLAYER_DISCONNECTED
+@SerialName("PLAYER_DISCONNECTED")
+data class PlayerDisconnectedResponse(val playerId: String) : ServerMessage {
+    override val type: ServerMessageType get() = ServerMessageType.PLAYER_DISCONNECTED
 }
 
 @Serializable
-data class InfoResponse(val message: String) : WebSocketMessage() {
-    override val type: ServerMessageType = ServerMessageType.INFO
+@SerialName("INFO")
+data class InfoResponse(val message: String) : ServerMessage {
+    override val type: ServerMessageType get() = ServerMessageType.INFO
 }
 
 @Serializable
-data class ErrorResponse(
-    val code: String,
-    val message: String
-) : WebSocketMessage() {
-    override val type: ServerMessageType = ServerMessageType.ERROR
-}
-
-
-@Serializable
-data class RoomCreatedResponse(val roomId: String) : WebSocketMessage() {
-    override val type: ServerMessageType = ServerMessageType.ROOM_CREATED
+@SerialName("ERROR")
+data class ErrorResponse(val code: String, val message: String) : ServerMessage {
+    override val type: ServerMessageType get() = ServerMessageType.ERROR
 }
 
 @Serializable
-data class JoinedRoomResponse(val roomId: String) : WebSocketMessage() {
-    override val type: ServerMessageType = ServerMessageType.JOINED_ROOM
+@SerialName("ROOM_CREATED")
+data class RoomCreatedResponse(val roomId: String) : ServerMessage {
+    override val type: ServerMessageType get() = ServerMessageType.ROOM_CREATED
 }
 
 @Serializable
-data class LeftRoomResponse(val roomId: String) : WebSocketMessage() {
-    override val type: ServerMessageType = ServerMessageType.LEFT_ROOM
+@SerialName("JOINED_ROOM")
+data class JoinedRoomResponse(val roomId: String) : ServerMessage {
+    override val type: ServerMessageType get() = ServerMessageType.JOINED_ROOM
 }
 
 @Serializable
-data class RoomUpdatedResponse(val roomId: String) : WebSocketMessage() {
-    override val type: ServerMessageType = ServerMessageType.ROOM_UPDATE
+@SerialName("LEFT_ROOM")
+data class LeftRoomResponse(val roomId: String) : ServerMessage {
+    override val type: ServerMessageType get() = ServerMessageType.LEFT_ROOM
 }
 
 @Serializable
-data class PlayerActionResponse(val name: String) : WebSocketMessage() {
-    override val type: ServerMessageType = ServerMessageType.PLAYER_ACTION
+@SerialName("ROOM_UPDATE")
+data class RoomUpdatedResponse(val roomId: String) : ServerMessage {
+    override val type: ServerMessageType get() = ServerMessageType.ROOM_UPDATE
+}
+
+@Serializable
+@SerialName("PLAYER_ACTION")
+data class PlayerActionResponse(val name: String) : ServerMessage {
+    override val type: ServerMessageType get() = ServerMessageType.PLAYER_ACTION
 }

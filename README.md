@@ -62,29 +62,29 @@ wscat -c ws://localhost:8080
 Создание игрока
 
 ```
-{"type": "INIT_PLAYER", "data": {"name": "antllcon"}}
+{"kind": "INIT_PLAYER", "name": "antllcon"}
 ```
 
 Создание комнаты (авто заход)
 
 ```
-{"type": "CREATE_ROOM", "data": {"name": "Party for me"}}
+{"kind": "CREATE_ROOM", "name": "Epic Battle"}
 ```
 
 Подключение к комнате
 
 ```
-{"type": "JOIN_ROOM", "data": {"name": "Party for me"}}
+{"kind": "JOIN_ROOM", "name": "Epic Battle"}  // или "ID"
 ```
 
 Отправка действия
 
 ```
-{"type": "PLAYER_ACTION", "data": {"name": "move_forward"}}
+{"kind": "PLAYER_ACTION", "name": "move_forward"}
 ```
 
 Выход из комнаты
 
 ```
-{"type": "LEAVE_ROOM"}
+{"kind": "LEAVE_ROOM"}
 ```
