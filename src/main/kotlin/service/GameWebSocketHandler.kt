@@ -72,7 +72,6 @@ class GameWebSocketHandler {
         }
     }
 
-
     suspend fun handleInitPlayer(session: WebSocketSession, request: InitPlayerRequest) {
         try {
             val player = GameRoomManager.registerPlayer(request.name, session)
@@ -177,6 +176,8 @@ class GameWebSocketHandler {
                 sendErrorToSession(session, ServerException(request.name, "Player already in room"))
                 return
             }
+
+            println("Joining room $request")
 
             // TODO: заменить на id комнаты, нужно будет его отдавать при создании сервера
             val targetRoomIdOrName = request.name // Предполагаем, что 'name' здесь - это roomId или имя комнаты

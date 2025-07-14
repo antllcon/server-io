@@ -8,6 +8,34 @@
 
 Пока не понял...
 
+### Виртуальная машина
+
+При желании можно поднять виртуальную машину, я использую yandex cloud (или что-то такое), вот всё что нужно для поднятия сервера
+
+```bash
+# Обновление и установка пакетов
+sudo apt update && sudo apt full-upgrade -y
+sudo apt autopurge
+
+# Установка пакетов
+sudo apt install openjdk-21-jdk
+sudo apt install snapd
+sudo snap install kotlin --classic
+
+git clone https://github.com/antllcon/server-io.git
+
+# Сборка проекта
+cd server-io/
+chmod +x ./gradlew
+./gradlew clean shadowJar
+java -jar build/libs/server-io-all.jar
+
+# Открываем порт
+sudo ufw allow 8080/tcp
+sudo ufw enable
+sudo ufw status
+```
+
 ### Структура проекта
 
 ```
@@ -15,29 +43,20 @@ src/
 ├── main/
 │   ├── kotlin/
 │   │   ├── config/               # Конфигурационные классы
-│   │   │   └── WebSocketConfig.kt  # Настройки WebSocket (ping, таймауты)
 │   │   │
 │   │   ├── controller/           # Обработчики запросов
-│   │   │   └── GameController.kt   # Основная логика WebSocket-обработчика
 │   │   │
 │   │   ├── manager/              # Менеджеры состояний
-│   │   │   └── GameRoomManager.kt  # Singleton для управления комнатами
 │   │   │
 │   │   ├── model/                # Модели данных
-│   │   │   ├── Player.kt           # data class Player
-│   │   │   └── GameRoom.kt         # data class GameRoom
 │   │   │
 │   │   ├── routes/               # Маршруты
-│   │   │   └── GameRoutes.kt       # Регистрация эндпоинтов (/game)
 │   │   │
 │   │   ├── service/              # Бизнес-логика
-│   │   │   └── RoomService.kt      # Функции работы с комнатами (broadcast и т.д.)
 │   │   │
 │   │   └── Application.kt        # Файл инициализации
 │   │
 │   └── resources/                # Ресурсы 
-│
-└── test/                         # Тесты
 ```
 
 ### Тестовые запросы для сервера
