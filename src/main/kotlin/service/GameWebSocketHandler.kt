@@ -206,7 +206,7 @@ class GameWebSocketHandler {
                 sendToSession(session, JoinedRoomResponse(room.id))
                 broadcastToRoom(room.id, RoomUpdatedResponse(room.id), player.id)
                 sendToSession(session, InfoResponse("You have joined room: ${room.name}"))
-                if (room.players.size >= 2) {
+                if (room.players.isNotEmpty()) {
                     room.startGameLoop(this)
                 }
             } else {
