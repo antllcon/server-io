@@ -29,11 +29,6 @@ cd server-io/
 chmod +x ./gradlew
 ./gradlew clean shadowJar
 java -jar build/libs/server-io-all.jar
-
-# Открываем порт
-sudo ufw allow 8080/tcp
-sudo ufw enable
-sudo ufw status
 ```
 
 ### Структура проекта
