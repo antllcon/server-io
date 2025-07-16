@@ -23,11 +23,13 @@ import mobility.model.RoomCreatedResponse
 import mobility.model.RoomUpdatedResponse
 import mobility.model.ServerException
 import mobility.model.ServerMessage
+import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 
 class GameWebSocketHandler {
 
     private val sessionToPlayerId = ConcurrentHashMap<WebSocketSession, String>()
+    private val logger = LoggerFactory.getLogger(GameWebSocketHandler::class.java)
 
     suspend fun handleSession(session: WebSocketServerSession) {
         try {
@@ -206,7 +208,7 @@ class GameWebSocketHandler {
                 broadcastToRoom(room.id, RoomUpdatedResponse(room.id), player.id)
                 sendToSession(session, InfoResponse("You have joined room: ${room.name}"))
                 if (room.players.isNotEmpty()) {
-                    println("GAAAAME LOOOP START!!!")
+                    logger.info("GAAAAME LOOOP START!!!")
                     room.startGameLoop(this)
                 }
             } else {
