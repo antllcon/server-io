@@ -43,6 +43,7 @@ class GameWebSocketHandler {
                         sendErrorToSession(session, ServerException("MESSAGE_DECODE_ERROR", "Invalid message format: ${e.message}"))
                         continue
                     }
+                    logger.info("Logger turn on")
                     handleIncoming(session, clientMessage)
                 }
             }
