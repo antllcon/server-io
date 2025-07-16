@@ -122,9 +122,13 @@ class GameWebSocketHandler {
             }
 
             sendToSession(session, RoomCreatedResponse(newRoom.id))
-            // TODO: возможно раскомментировать
-//            sendToSession(session, JoinedRoomResponse(newRoom.id))
             sendToSession(session, InfoResponse("You have created and joined room: ${newRoom.name}"))
+
+            val roomAfterJoin = GameRoomManager.rooms[newRoom.id]
+            if (roomAfterJoin != null && roomAfterJoin.players.isNotEmpty()) {
+                println("Server: Room created and first player joined, starting game loop for room ${roomAfterJoin.id}")
+                roomAfterJoin.startGameLoop(this)
+            }
 
         } catch (e: Exception) {
             sendErrorToSession(session, ServerException(request.name, "Failed to create room: ${e.message}"))
@@ -208,10 +212,13 @@ class GameWebSocketHandler {
                 sendToSession(session, JoinedRoomResponse(room.id))
                 broadcastToRoom(room.id, RoomUpdatedResponse(room.id), player.id)
                 sendToSession(session, InfoResponse("You have joined room: ${room.name}"))
-                if (room.players.isNotEmpty()) {
-                    logger.info("GAAAAME LOOOP START!!!")
-                    room.startGameLoop(this)
-                }
+
+
+//                if (room.players.isNotEmpty()) {
+//                    logger.info("GAAAAME LOOOP START!!!")
+//                    room.startGameLoop(this)
+//                }
+
             } else {
                 sendErrorToSession(session, ServerException(request.name, "Failed to join room '${room.name}'"))
             }
