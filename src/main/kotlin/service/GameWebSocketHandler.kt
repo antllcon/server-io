@@ -126,7 +126,7 @@ class GameWebSocketHandler {
 
             val roomAfterJoin = GameRoomManager.rooms[newRoom.id]
             if (roomAfterJoin != null && roomAfterJoin.players.isNotEmpty()) {
-                println("Server: Room created and first player joined, starting game loop for room ${roomAfterJoin.id}")
+                logger.info("START GAME LOOP")
                 roomAfterJoin.startGameLoop(this)
             }
 
@@ -215,9 +215,9 @@ class GameWebSocketHandler {
 
 
 //                if (room.players.isNotEmpty()) {
-//                    logger.info("GAAAAME LOOOP START!!!")
-//                    room.startGameLoop(this)
-//                }
+////                    logger.info("GAAAAME LOOOP START!!!")
+////                    room.startGameLoop(this)
+////                }
 
             } else {
                 sendErrorToSession(session, ServerException(request.name, "Failed to join room '${room.name}'"))
