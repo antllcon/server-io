@@ -18,6 +18,7 @@ import mobility.model.PlayerActionRequest
 import mobility.model.PlayerActionResponse
 import mobility.model.PlayerConnectedResponse
 import mobility.model.PlayerDisconnectedResponse
+import mobility.model.PlayerInputRequest
 import mobility.model.RoomCreatedResponse
 import mobility.model.RoomUpdatedResponse
 import mobility.model.ServerException
@@ -64,6 +65,7 @@ class GameWebSocketHandler {
                 is JoinRoomRequest -> handleJoinRoom(session, message)
                 is LeaveRoomRequest -> handleLeaveRoom(session)
                 is PlayerActionRequest -> handlePlayerAction(session, message)
+                is PlayerInputRequest -> handlePlayerInput(session, message)
 
             }
         } catch (e: Exception) {
@@ -274,5 +276,16 @@ class GameWebSocketHandler {
         } catch (e: Exception) {
             sendErrorToSession(session, ServerException(request.name, "Failed to process player action: ${e.message}"))
         }
+    }
+
+    private fun handlePlayerInput(session: WebSocketSession, request: PlayerInputRequest) {
+        val playerId = sessionToPlayerId[session] ?: return
+        val player = GameRoomManager.players[playerId] ?: return
+        val roomId = player.roomId ?: return
+        val room = GameRoomManager.rooms[roomId] ?: return
+
+        // Просто сохраняем последнее действие игрока
+        // Игровой цикл комнаты сам его подхватит
+        room.playerInputs[playerId] = request
     }
 }

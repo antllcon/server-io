@@ -25,6 +25,7 @@ val AppJson = Json {
             subclass(JoinRoomRequest::class)
             subclass(LeaveRoomRequest::class)
             subclass(PlayerActionRequest::class)
+            subclass(PlayerInputRequest::class)
         }
         polymorphic(ServerMessage::class) {
             subclass(PlayerConnectedResponse::class)
@@ -36,6 +37,7 @@ val AppJson = Json {
             subclass(LeftRoomResponse::class)
             subclass(RoomUpdatedResponse::class)
             subclass(PlayerActionResponse::class)
+            subclass(GameStateUpdateResponse::class)
         }
     }
 }
