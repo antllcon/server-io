@@ -67,7 +67,7 @@ data class PlayerStateDto(
     val id: String,
     val posX: Float,
     val posY: Float,
-    val visualDirection: Float
+    val direction: Float
 )
 
 @Serializable

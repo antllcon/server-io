@@ -57,7 +57,7 @@ class GameRoom(
                         id = p.id,
                         posX = p.car.position.x,
                         posY = p.car.position.y,
-                        visualDirection = p.car.visualDirection
+                        direction = p.car.visualDirection
                     )
                 }
 
