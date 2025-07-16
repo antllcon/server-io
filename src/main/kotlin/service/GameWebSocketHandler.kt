@@ -139,6 +139,12 @@ class GameWebSocketHandler {
             return
         }
 
+        val room = GameRoomManager.rooms[roomId]
+        if (room != null && room.players.isEmpty()) {
+            room.stopGameLoop()
+            GameRoomManager.rooms.remove(roomId)
+        }
+
         broadcastToRoom(roomId, PlayerDisconnectedResponse(playerId), null)
 
         if (GameRoomManager.rooms[roomId]?.players?.isEmpty() == true) {
@@ -200,6 +206,9 @@ class GameWebSocketHandler {
                 sendToSession(session, JoinedRoomResponse(room.id))
                 broadcastToRoom(room.id, RoomUpdatedResponse(room.id), player.id)
                 sendToSession(session, InfoResponse("You have joined room: ${room.name}"))
+                if (room.players.size >= 2) {
+                    room.startGameLoop(this)
+                }
             } else {
                 sendErrorToSession(session, ServerException(request.name, "Failed to join room '${room.name}'"))
             }
@@ -234,6 +243,13 @@ class GameWebSocketHandler {
 
             sendToSession(session, LeftRoomResponse(currentRoomId))
             sendToSession(session, InfoResponse("You have left room: $currentRoomId"))
+
+            val room = GameRoomManager.rooms[currentRoomId]
+            if (room != null && room.players.isEmpty()) {
+                println("Room $currentRoomId is empty, stopping loop and removing it.")
+                room.stopGameLoop()
+                GameRoomManager.rooms.remove(currentRoomId)
+            }
 
             broadcastToRoom(currentRoomId, PlayerDisconnectedResponse(playerId), playerId)
 
