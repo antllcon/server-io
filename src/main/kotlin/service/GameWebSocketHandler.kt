@@ -187,10 +187,9 @@ class GameWebSocketHandler {
 
             println("Joining room $request")
 
-            // TODO: заменить на id комнаты, нужно будет его отдавать при создании сервера
-            val targetRoomIdOrName = request.name // Предполагаем, что 'name' здесь - это roomId или имя комнаты
-            val room = GameRoomManager.rooms[targetRoomIdOrName] // Попытка найти по ID
-                ?: GameRoomManager.rooms.values.firstOrNull { it.name == targetRoomIdOrName } // Попытка найти по имени
+            val targetRoomIdOrName = request.name
+            val room = GameRoomManager.rooms[targetRoomIdOrName]
+                ?: GameRoomManager.rooms.values.firstOrNull { it.name == targetRoomIdOrName }
                 ?: run {
                     sendErrorToSession(session, ServerException(request.name, "Room '$targetRoomIdOrName' not found"))
                     return
@@ -207,6 +206,7 @@ class GameWebSocketHandler {
                 broadcastToRoom(room.id, RoomUpdatedResponse(room.id), player.id)
                 sendToSession(session, InfoResponse("You have joined room: ${room.name}"))
                 if (room.players.isNotEmpty()) {
+                    println("GAAAAME LOOOP START!!!")
                     room.startGameLoop(this)
                 }
             } else {
