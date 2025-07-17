@@ -39,7 +39,7 @@ data class Car(
     private var _targetTurnInput: Float = 0f
 
     val speed: Float get() = _speed
-    val direction: Float get() = _direction
+    var direction: Float = 0.0f
     var visualDirection: Float = 0f
     val isDrifting: Boolean get() = _isDrifting
     val mass: Float = 1f
