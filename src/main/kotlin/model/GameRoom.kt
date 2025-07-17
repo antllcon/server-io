@@ -14,7 +14,7 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 class GameRoom(
-    val id: String = UUID.randomUUID().toString(),  
+    val id: String = UUID.randomUUID().toString(),
     val name: String,
     val players: MutableList<Player> = mutableListOf(),
     val maxPlayers: Int = 4
@@ -58,18 +58,21 @@ class GameRoom(
                     player.car.setSpeedModifier(gameMap.getSpeedModifier(cellX, cellY))
 
                     player.car.update(deltaTime)
-                    logger.info("Player ${player.id} - Car after update: Pos=${player.car.position}, Dir=${player.car.direction}, Speed=${player.car.speed}, Turning=${player.car.direction}")
+//                    logger.info("Player ${player.id} - Car after update: Pos=${player.car.position}, Dir=${player.car.direction}, Speed=${player.car.speed}, Turning=${player.car.direction}")
                 }
 
                 // 2. Собираем состояние
                 val playerStates = players.map { p ->
-                    PlayerStateDto(
+                    val dto = PlayerStateDto(
                         id = p.id,
                         posX = p.car.position.x,
                         posY = p.car.position.y,
                         direction = p.car.direction
                     )
+                    logger.info("Server: Sending PlayerStateDto for ${p.id}: PosX=${dto.posX}, PosY=${dto.posY}, Direction=${dto.direction}")
+                    dto
                 }
+
 
                 // 3. Рассылаем всем в комнате
                 handler.broadcastToRoom(id, GameStateUpdateResponse(playerStates))
