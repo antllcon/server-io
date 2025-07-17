@@ -7,7 +7,7 @@ class GameMap private constructor(
     private val _terrainGrid: Array<Array<TerrainType>>
 ) {
     enum class TerrainType(val speedModifier: Float) {
-        ABYSS(0.0f),
+        ABYSS(1.0f),
         GRASS(0.2f),
         ROAD(1.0f)
     }
