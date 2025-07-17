@@ -11,5 +11,5 @@ data class Player(
     @kotlinx.serialization.Transient // Игнорируем сессию при сериализации
     val session: WebSocketSession,
     var roomId: String? = null,
-    val car: Car = Car(id = id, playerName = name, initialPosition = Vector2D(100f, 100f))
+    val car: Car = Car(id = id, playerName = name, initialPosition = Vector2D(5f, 5f))
 )
