@@ -9,6 +9,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mobility.service.GameWebSocketHandler
+import org.slf4j.LoggerFactory
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -19,6 +20,7 @@ class GameRoom(
     val maxPlayers: Int = 4
 ) {
     val playerInputs = ConcurrentHashMap<String, PlayerInputRequest>()
+    private val logger = LoggerFactory.getLogger(GameRoom::class.java)
     private var gameLoopJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
@@ -39,16 +41,24 @@ class GameRoom(
                 players.forEach { player ->
                     val input = playerInputs[player.id] ?: PlayerInputRequest(false, 0f)
 
+                    logger.info("Player ${player.id} - Input: isAccelerating=${input.isAccelerating}, turnDirection=${input.turnDirection}")
+                    logger.info("Player ${player.id} - Car before update: Pos=${player.car.position}, Dir=${player.car.direction}, Speed=${player.car.speed}, Turning=${player.car.direction}")
+
                     if (input.isAccelerating) player.car.accelerate(deltaTime)
                     else player.car.decelerate(deltaTime)
 
-                    player.car.startTurn(input.turnDirection)
+                    if (input.turnDirection != 0f) {
+                        player.car.startTurn(input.turnDirection)
+                    } else {
+                        player.car.stopTurn()
+                    }
 
                     val cellX = player.car.position.x.toInt().coerceIn(0, gameMap.size - 1)
                     val cellY = player.car.position.y.toInt().coerceIn(0, gameMap.size - 1)
                     player.car.setSpeedModifier(gameMap.getSpeedModifier(cellX, cellY))
 
                     player.car.update(deltaTime)
+                    logger.info("Player ${player.id} - Car after update: Pos=${player.car.position}, Dir=${player.car.direction}, Speed=${player.car.speed}, Turning=${player.car.direction}")
                 }
 
                 // 2. Собираем состояние

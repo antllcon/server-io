@@ -1,28 +1,10 @@
 package mobility.service
 
-import io.ktor.server.websocket.WebSocketServerSession
-import io.ktor.websocket.Frame
-import io.ktor.websocket.WebSocketSession
-import io.ktor.websocket.readText
+import io.ktor.server.websocket.*
+import io.ktor.websocket.*
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import mobility.manager.GameRoomManager
-import mobility.model.ClientMessage
-import mobility.model.CreateRoomRequest
-import mobility.model.InfoResponse
-import mobility.model.InitPlayerRequest
-import mobility.model.JoinRoomRequest
-import mobility.model.JoinedRoomResponse
-import mobility.model.LeaveRoomRequest
-import mobility.model.LeftRoomResponse
-import mobility.model.PlayerActionRequest
-import mobility.model.PlayerActionResponse
-import mobility.model.PlayerConnectedResponse
-import mobility.model.PlayerDisconnectedResponse
-import mobility.model.PlayerInputRequest
-import mobility.model.RoomCreatedResponse
-import mobility.model.RoomUpdatedResponse
-import mobility.model.ServerException
-import mobility.model.ServerMessage
+import mobility.model.*
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 
@@ -43,7 +25,6 @@ class GameWebSocketHandler {
                         sendErrorToSession(session, ServerException("MESSAGE_DECODE_ERROR", "Invalid message format: ${e.message}"))
                         continue
                     }
-                    logger.info("Logger turn on")
                     handleIncoming(session, clientMessage)
                 }
             }
@@ -310,8 +291,6 @@ class GameWebSocketHandler {
         val roomId = player.roomId ?: return
         val room = GameRoomManager.rooms[roomId] ?: return
 
-        // Просто сохраняем последнее действие игрока
-        // Игровой цикл комнаты сам его подхватит
         room.playerInputs[playerId] = request
     }
 }
