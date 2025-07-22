@@ -19,12 +19,11 @@ class GameRoom(
     val players: MutableList<Player> = mutableListOf(),
     val maxPlayers: Int = 4
 ) {
-    val playerInputs = ConcurrentHashMap<String, PlayerInputRequest>()
     private val logger = LoggerFactory.getLogger(GameRoom::class.java)
     private var gameLoopJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-
-    private val gameMap = GameMap.createRaceTrackMap()
+    private val gameMap = GameMap.generateDungeonMap()
+    val playerInputs = ConcurrentHashMap<String, PlayerInputRequest>()
 
     fun isFull(): Boolean = players.size >= maxPlayers
 
@@ -48,9 +47,7 @@ class GameRoom(
                     else player.car.decelerate(deltaTime)
 
                     if (input.turnDirection != 0f) {
-                        player.car.startTurn(input.turnDirection)
-                    } else {
-                        player.car.stopTurn()
+                        player.car.direction = input.turnDirection
                     }
 
                     val cellX = player.car.position.x.toInt().coerceIn(0, gameMap.size - 1)
@@ -58,7 +55,7 @@ class GameRoom(
                     player.car.setSpeedModifier(gameMap.getSpeedModifier(cellX, cellY))
 
                     player.car.update(deltaTime)
-//                    logger.info("Player ${player.id} - Car after update: Pos=${player.car.position}, Dir=${player.car.direction}, Speed=${player.car.speed}, Turning=${player.car.direction}")
+                    logger.info("Player ${player.id} - Car after update: Pos=${player.car.position}, Dir=${player.car.direction}, Speed=${player.car.speed}, Turning=${player.car.direction}")
                 }
 
                 // 2. Собираем состояние

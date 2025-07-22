@@ -60,8 +60,14 @@ class GameWebSocketHandler {
 
     suspend fun handleInitPlayer(session: WebSocketSession, request: InitPlayerRequest) {
         try {
+            if (sessionToPlayerId.containsKey(session)) {
+                sendErrorToSession(session, ServerException("PLAYER_EXISTS", "Player already initialized"))
+                return
+            }
+
             val player = GameRoomManager.registerPlayer(request.name, session)
             sessionToPlayerId[session] = player.id
+
             sendToSession(session, PlayerConnectedResponse(player.id, player.name))
 
         } catch (e: Exception) {
