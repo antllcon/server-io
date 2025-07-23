@@ -1,5 +1,6 @@
 package mobility.model
 
+import domain.GameMap
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -9,6 +10,7 @@ enum class ClientMessageType {
     CREATE_ROOM,
     JOIN_ROOM,
     LEAVE_ROOM,
+    START_GAME,
     PLAYER_ACTION,
     PLAYER_INPUT
 }
@@ -21,9 +23,12 @@ enum class ServerMessageType {
     ROOM_CREATED,
     JOINED_ROOM,
     LEFT_ROOM,
+    STARTED_GAME,
     ROOM_UPDATE,
     PLAYER_ACTION,
-    GAME_STATE_UPDATE
+    GAME_COUNTDOWN_UPDATE,
+    GAME_STATE_UPDATE,
+    GAME_STOP
 }
 
 @Serializable
@@ -41,6 +46,12 @@ data class InitPlayerRequest(val name: String) : ClientMessage {
 @SerialName("CREATE_ROOM")
 data class CreateRoomRequest(val name: String) : ClientMessage {
     override val type: ClientMessageType get() = ClientMessageType.CREATE_ROOM
+}
+
+@Serializable
+@SerialName("START_GAME")
+data class StartGameRequest(val name: String) : ClientMessage {
+    override val type: ClientMessageType get() = ClientMessageType.START_GAME
 }
 
 @Serializable
@@ -67,12 +78,13 @@ data class PlayerStateDto(
     val id: String,
     val posX: Float,
     val posY: Float,
-    val direction: Float
+    val direction: Float,
+    val isFinished: Boolean
 )
 
 @Serializable
 @SerialName("PLAYER_INPUT")
-data class PlayerInputRequest(val isAccelerating: Boolean, val turnDirection: Float) : ClientMessage {
+data class PlayerInputRequest(val isAccelerating: Boolean, val turnDirection: Float, val deltaTime: Float, val ringsCrossed: Int) : ClientMessage {
     override val type: ClientMessageType get() = ClientMessageType.PLAYER_INPUT
 }
 
@@ -124,6 +136,32 @@ data class LeftRoomResponse(val roomId: String) : ServerMessage {
 }
 
 @Serializable
+@SerialName("STARTED_GAME")
+data class StartedGameResponse(val roomId: String, val gameMap: Array<IntArray>) : ServerMessage {
+    override val type: ServerMessageType get() = ServerMessageType.STARTED_GAME
+
+    //everything below this is the code that Android Studio added by itself,
+    //so I don't have a clue what the hell is this
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as StartedGameResponse
+
+        if (roomId != other.roomId) return false
+        if (!gameMap.contentDeepEquals(other.gameMap)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = roomId.hashCode()
+        result = 31 * result + gameMap.contentDeepHashCode()
+        return result
+    }
+}
+
+@Serializable
 @SerialName("ROOM_UPDATE")
 data class RoomUpdatedResponse(val roomId: String) : ServerMessage {
     override val type: ServerMessageType get() = ServerMessageType.ROOM_UPDATE
@@ -136,7 +174,19 @@ data class PlayerActionResponse(val name: String) : ServerMessage {
 }
 
 @Serializable
+@SerialName("GAME_COUNTDOWN_UPDATE")
+data class GameCountdownUpdateResponse(val remainingTime: Long) : ServerMessage {
+    override val type: ServerMessageType get() = ServerMessageType.GAME_COUNTDOWN_UPDATE
+}
+
+@Serializable
 @SerialName("GAME_STATE_UPDATE")
 data class GameStateUpdateResponse(val players: List<PlayerStateDto>) : ServerMessage {
     override val type: ServerMessageType get() = ServerMessageType.GAME_STATE_UPDATE
+}
+
+@Serializable
+@SerialName("GAME_STOP")
+data class GameStopResponse(val result: MutableMap<String, Long>) : ServerMessage {
+    override val type: ServerMessageType get() = ServerMessageType.GAME_STOP
 }
