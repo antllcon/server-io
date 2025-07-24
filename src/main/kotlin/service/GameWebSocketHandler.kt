@@ -102,7 +102,7 @@ class GameWebSocketHandler {
                 return
             }
 
-            broadcastToRoom(request.name, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
+            broadcastToRoom(player.roomId!!, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
             logger.info("Create -> ${GameRoomManager.getPlayersNames().first()}")
 
             sendToSession(session, RoomCreatedResponse(newRoom.id))
@@ -199,7 +199,7 @@ class GameWebSocketHandler {
             if (isJoined) {
                 sendToSession(session, JoinedRoomResponse(room.id))
                 broadcastToRoom(player.roomId!!, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
-                logger.info("Join -> ${GameRoomManager.getPlayersNames().first()}")
+                logger.info("Join -> ${GameRoomManager.getPlayersNames()}")
 
                 sendToSession(session, InfoResponse("You have joined room: ${room.name}"))
             } else {
