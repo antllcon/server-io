@@ -52,7 +52,7 @@ class GameRoom(
     fun startCountdown(handler: GameWebSocketHandler) {
         scope.launch {
             while (secondsBeforeStart > 0) {
-                secondsBeforeStart -= serverTickRate / 100f
+                secondsBeforeStart -= serverTickRate / 1000f
 
                 handler.broadcastToRoom(id, GameCountdownUpdateResponse(secondsBeforeStart))
 
