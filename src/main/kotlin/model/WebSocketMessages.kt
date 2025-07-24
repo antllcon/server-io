@@ -200,7 +200,7 @@ data class PlayerActionResponse(val name: String) : ServerMessage {
 
 @Serializable
 @SerialName("GAME_COUNTDOWN_UPDATE")
-data class GameCountdownUpdateResponse(val remainingTime: Long) : ServerMessage {
+data class GameCountdownUpdateResponse(val remainingTime: Float) : ServerMessage {
     override val type: ServerMessageType get() = ServerMessageType.GAME_COUNTDOWN_UPDATE
 }
 

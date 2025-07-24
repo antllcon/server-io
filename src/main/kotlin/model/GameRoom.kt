@@ -28,7 +28,7 @@ class GameRoom(
     val name: String,
     val players: MutableList<Player> = mutableListOf(),
     var state: GameRoomState = GameRoomState.LOBBY,
-    var secondsBeforeStart: Long = 5L,
+    var secondsBeforeStart: Float = 5f,
     private val maxPlayers: Int = 6
 ) {
     companion object {
@@ -52,7 +52,7 @@ class GameRoom(
     fun startCountdown(handler: GameWebSocketHandler) {
         scope.launch {
             while (secondsBeforeStart > 0) {
-                secondsBeforeStart -= 1L
+                secondsBeforeStart -= serverTickRate / 100f
 
                 handler.broadcastToRoom(id, GameCountdownUpdateResponse(secondsBeforeStart))
 
