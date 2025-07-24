@@ -64,7 +64,6 @@ class GameWebSocketHandler {
             val player = GameRoomManager.registerPlayer(request.name, session)
             sessionToPlayerId[session] = player.id
             sendToSession(session, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
-            broadcastToRoom(request.name, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
         } catch (e: Exception) {
             sendErrorToSession(session, ServerException(request.name, "Failed to init player: ${e.message}"))
             return
@@ -191,7 +190,7 @@ class GameWebSocketHandler {
             val isJoined = GameRoomManager.joinRoom(player.id, room.id)
             if (isJoined) {
                 sendToSession(session, JoinedRoomResponse(room.id))
-                broadcastToRoom(room.id, RoomUpdatedResponse(room.id), player.id)
+                broadcastToRoom(request.name, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
                 sendToSession(session, InfoResponse("You have joined room: ${room.name}"))
             } else {
                 sendErrorToSession(session, ServerException(request.name, "Failed to join room '${room.name}'"))
