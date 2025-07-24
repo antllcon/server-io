@@ -141,9 +141,10 @@ class GameWebSocketHandler {
     suspend fun broadcastToRoom(roomId: String, message: ServerMessage, exceptPlayerId: String? = null) {
         val room = GameRoomManager.rooms[roomId] ?: return
         room.players.forEach { player ->
+            logger.info("Broadcast ${player.name} в комнату ${room.id}")
+
             if (player.id != exceptPlayerId) {
                 try {
-                    logger.info("Broadcast ${player.name} в комнату ${room.id}")
                     sendToSession(player.session, message)
 
                 } catch (e: Exception) {
