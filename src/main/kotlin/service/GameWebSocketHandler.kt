@@ -62,6 +62,9 @@ class GameWebSocketHandler {
     suspend fun handleInitPlayer(session: WebSocketSession, request: InitPlayerRequest) {
         try {
             val player = GameRoomManager.registerPlayer(request.name, session)
+
+            logger.info("Init player, ${player.name}")
+
             sessionToPlayerId[session] = player.id
             sendToSession(session, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
         } catch (e: Exception) {
@@ -72,6 +75,8 @@ class GameWebSocketHandler {
 
     suspend fun handleCreateRoom(session: WebSocketSession, request: CreateRoomRequest) {
         try {
+            logger.info("Create room, ${request.name}")
+
             val playerId = sessionToPlayerId[session] ?: run {
                 sendErrorToSession(session, ServerException(request.name, "Player is not init"))
                 return
@@ -103,7 +108,6 @@ class GameWebSocketHandler {
             }
 
             broadcastToRoom(player.roomId!!, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
-            logger.info("Create -> ${GameRoomManager.getPlayersNames().first()}")
 
             sendToSession(session, RoomCreatedResponse(newRoom.id))
             sendToSession(session, InfoResponse("You have created and joined room: ${newRoom.name}"))
@@ -115,8 +119,11 @@ class GameWebSocketHandler {
     }
 
     suspend fun handleDisconnect(session: WebSocketSession) {
+
         val playerId = sessionToPlayerId.remove(session) ?: return
         val player = GameRoomManager.players[playerId] ?: return
+
+        logger.info("Disconnect, ${player.name}")
 
         val roomId = player.roomId
         GameRoomManager.removePlayer(playerId)
@@ -130,7 +137,7 @@ class GameWebSocketHandler {
             GameRoomManager.rooms.remove(roomId)
         }
 
-        broadcastToRoom(roomId, PlayerDisconnectedResponse(playerId), null)
+        broadcastToRoom(player.roomId!!, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
 
         if (GameRoomManager.rooms[roomId]?.players?.isEmpty() == true) {
             println("Room $roomId is empty, removing it")
@@ -142,13 +149,11 @@ class GameWebSocketHandler {
 
         val room = GameRoomManager.rooms[roomId] ?: return
 
-        logger.info("${room.name} broadcast to room $roomId")
-
         room.players.forEach { player ->
-            logger.info("Broadcast ${player.name} в комнату ${room.id}")
 
             if (player.id != exceptPlayerId) {
                 try {
+                    logger.info("Broadcast ${player.name} to room ${room.name}")
                     sendToSession(player.session, message)
 
                 } catch (e: Exception) {
@@ -160,7 +165,7 @@ class GameWebSocketHandler {
 
     suspend fun handleJoinRoom(session: WebSocketSession, request: JoinRoomRequest) {
         try {
-            logger.info("Join работает")
+            logger.info("Join room, ${request.name}")
 
             val playerId = sessionToPlayerId[session] ?: run {
                 sendErrorToSession(session, ServerException(request.name, "Player is not init"))
@@ -199,8 +204,6 @@ class GameWebSocketHandler {
             if (isJoined) {
                 sendToSession(session, JoinedRoomResponse(room.id))
                 broadcastToRoom(player.roomId!!, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
-                logger.info("Join -> ${GameRoomManager.getPlayersNames()}")
-
                 sendToSession(session, InfoResponse("You have joined room: ${room.name}"))
             } else {
                 sendErrorToSession(session, ServerException(request.name, "Failed to join room '${room.name}'"))
@@ -213,22 +216,23 @@ class GameWebSocketHandler {
     }
 
     suspend fun handleLeaveRoom(session: WebSocketSession) {
-        val name = "LEAVE_ROOM"
         try {
 
             val playerId = sessionToPlayerId[session] ?: run {
-                sendErrorToSession(session, ServerException(name, "Player is not init"))
+                sendErrorToSession(session, ServerException("LEAVE_ROOM", "Player is not init"))
                 return
             }
 
             val player = GameRoomManager.players[playerId] ?: run {
-                sendErrorToSession(session, ServerException(name, "Player with ID $playerId not found"))
+                sendErrorToSession(session, ServerException("LEAVE_ROOM", "Player with ID $playerId not found"))
                 return
             }
 
+            logger.info("Leave room, ${player.name} from ${GameRoomManager.rooms[player.roomId]?.name}")
+
             val currentRoomId = player.roomId
             if (currentRoomId == null) {
-                sendErrorToSession(session, ServerException(name, "Player is not in any room"))
+                sendErrorToSession(session, ServerException("LEAVE_ROOM", "Player is not in any room"))
                 return
             }
 
@@ -244,6 +248,7 @@ class GameWebSocketHandler {
                 GameRoomManager.rooms.remove(currentRoomId)
             }
 
+            broadcastToRoom(player.roomId!!, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
             broadcastToRoom(currentRoomId, PlayerDisconnectedResponse(playerId), playerId)
 
             if (GameRoomManager.rooms[currentRoomId]?.players?.isEmpty() == true) {
@@ -252,12 +257,14 @@ class GameWebSocketHandler {
             }
 
         } catch (e: Exception) {
-            sendErrorToSession(session, ServerException(name, "Failed to leave room: ${e.message}"))
+            sendErrorToSession(session, ServerException("LEAVE_ROOM", "Failed to leave room: ${e.message}"))
         }
     }
 
     suspend fun handleStartGame(session: WebSocketSession, request: StartGameRequest) {
         try {
+            logger.info("Starting game, ${request.name}")
+
             val playerId = sessionToPlayerId[session] ?: run {
                 sendErrorToSession(session, ServerException(request.name, "Player is not init"))
                 return
@@ -285,6 +292,10 @@ class GameWebSocketHandler {
 
             currentRoom.state = GameRoomState.COUNTDOWN
             currentRoom.startCountdown(this)
+
+            logger.info("Started game, try to send map")
+            broadcastToRoom(player.roomId!!, StartedGameResponse(player.id, currentRoom.getGameMap()))
+
         } catch (_: Exception) {
             sendErrorToSession(session, ServerException(request.name, "Failed to start the game!"))
         }
