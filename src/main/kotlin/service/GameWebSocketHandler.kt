@@ -197,9 +197,8 @@ class GameWebSocketHandler {
 
             val isJoined = GameRoomManager.joinRoom(player.id, room.id)
             if (isJoined) {
-
-                // sendToSession(session, JoinedRoomResponse(room.id))
-                broadcastToRoom(request.name, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
+                sendToSession(session, JoinedRoomResponse(room.id))
+                broadcastToRoom(player.roomId!!, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
                 logger.info("Join -> ${GameRoomManager.getPlayersNames().first()}")
 
                 sendToSession(session, InfoResponse("You have joined room: ${room.name}"))
