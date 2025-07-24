@@ -99,6 +99,8 @@ class GameWebSocketHandler {
             if (!isJoined) {
                 GameRoomManager.rooms.remove(newRoom.id)
                 sendErrorToSession(session, ServerException(request.name, "Failed to join room after creation"))
+                broadcastToRoom(request.name, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
+                logger.info("Create -> ${GameRoomManager.getPlayersNames().first()}")
                 return
             }
 
@@ -191,7 +193,7 @@ class GameWebSocketHandler {
             if (isJoined) {
                 sendToSession(session, JoinedRoomResponse(room.id))
                 broadcastToRoom(request.name, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
-                logger.info(GameRoomManager.getPlayersNames().first())
+                logger.info("Join -> ${GameRoomManager.getPlayersNames().first()}")
                 sendToSession(session, InfoResponse("You have joined room: ${room.name}"))
             } else {
                 sendErrorToSession(session, ServerException(request.name, "Failed to join room '${room.name}'"))
