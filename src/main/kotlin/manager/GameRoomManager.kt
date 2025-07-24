@@ -1,5 +1,6 @@
 package mobility.manager
 
+import domain.GameMap
 import io.ktor.websocket.WebSocketSession
 import mobility.model.GameRoom
 import mobility.model.Player
@@ -40,5 +41,15 @@ object GameRoomManager {
     fun removePlayer(playerId: String) {
         leaveRoom(playerId)
         players.remove(playerId)
+    }
+
+    fun getPlayersNames(): Array<String> {
+        val names = emptyArray<String>()
+
+        players.forEach { _, player ->
+            names.plus(player.name)
+        }
+
+        return names
     }
 }

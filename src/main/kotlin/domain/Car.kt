@@ -5,128 +5,198 @@ import kotlin.math.*
 
 data class Car(
     val playerName: String = "Player",
-    val isPlayer: Boolean = true,
-    val isMultiplayer: Boolean = false,
-    val id: String = "1",
-    val position: Vector2D = Vector2D.Zero,
-    val corners: List<Vector2D> = emptyList(),
-    var speed: Float = 0f,
-    var direction: Float = 0f,
-    var visualDirection: Float = 0f,
-    val speedModifier: Float = 1f,
-    val currentSprite: Int = 1,
-    var distanceBeforeSpriteChange: Float = DEFAULT_SPRITE_CHANGE_DISTANCE
+    var isPlayer: Boolean = true,
+    var isMultiplayer: Boolean = false,
+    var id: String = "1",
+    val initialPosition: Vector2D = Vector2D.Zero
 ) {
     companion object {
         const val MIN_SPEED = 0f
-        const val MAX_SPEED = 2f
-        const val ACCELERATION = 0.0064f
-        const val DECELERATION = 0.0096f
-        const val LENGTH = 0.142f
-        const val WIDTH = 0.21f
+        const val MAX_SPEED = 0.2f
+        const val ACCELERATION = 0.02f
+        const val DECELERATION = 0.1f
+        const val BASE_TURN_RATE = 1.2f
+        const val DRIFT_TURN_RATE = 2.5f
+        const val DRIFT_SPEED_THRESHOLD = 1.8f
+        const val WIDTH = 0.035f
+        const val LENGTH = 0.06f
         const val MAP_SIZE = 10f
-        const val MAX_DIRECTION_CHANGE = 0.09f
-        const val VISUAL_LAG_SPEED = 0.05f
-        const val DEFAULT_SPRITE_CHANGE_DISTANCE = 0.01f
+
+        const val VISUAL_LAG_SPEED = 0.7f
+        const val DRIFT_ANGLE_OFFSET = 0.2f
     }
 
-    fun update(elapsedTime: Float, directionAngle: Float?, speedModifier: Float): Car {
-        return copy(
-            direction = handleAnglesDiff(directionAngle),
-            position = updatePosition(elapsedTime),
-            speed = updateSpeed(directionAngle),
-            speedModifier = setSpeedModifier(speedModifier),
-            visualDirection = updateVisualDirection(),
-            currentSprite = updateCurrentSprite()
+    var position: Vector2D = initialPosition
+    var corners: List<Vector2D> = emptyList()
+        private set
+
+    private var _speed: Float = 0f
+    private var _direction: Float = 0f
+    private var _turnInput: Float = 0f
+    private var _isDrifting: Boolean = false
+    private var _isAccelerating: Boolean = false
+    private var _speedModifier: Float = 1f
+    private var _targetSpeed: Float = 0f
+    private var _targetTurnInput: Float = 0f
+
+    val speed: Float get() = _speed
+    var direction: Float = 0.0f
+    var visualDirection: Float = 0f
+    val isDrifting: Boolean get() = _isDrifting
+    val isAccelerating: Boolean get() = _isAccelerating
+    val mass: Float = 1f
+    val momentOfInertia: Float = (1f / 12f) * mass * (WIDTH * WIDTH + LENGTH * LENGTH)
+    var angularVelocity: Float = 0f
+
+    fun setSpeedModifier(modifier: Float) {
+        _speedModifier = modifier.coerceIn(0f, 1f)
+    }
+
+    fun update(deltaTime: Float) {
+        val safeDeltaTime = deltaTime.coerceIn(0.001f, 0.016f)
+
+        _direction += angularVelocity * safeDeltaTime
+        angularVelocity *= 0.98f
+
+        updateTurnInput(safeDeltaTime)
+        updateDriftState()
+        updateTurning(safeDeltaTime)
+        updatePosition(safeDeltaTime)
+        updateVisualDirection(safeDeltaTime)
+        updateCorners()
+    }
+
+
+    private fun updateCorners() {
+        val halfLength = LENGTH / 2
+        val halfWidth = WIDTH / 2
+
+        val frontLeft = Vector2D(-halfLength, -halfWidth)
+        val frontRight = Vector2D(-halfLength, halfWidth)
+        val rearLeft = Vector2D(halfLength, -halfWidth)
+        val rearRight = Vector2D(halfLength, halfWidth)
+
+        val rotatedCorners = listOf(frontLeft, frontRight, rearLeft, rearRight).map { corner ->
+            rotatePoint(corner, _direction)
+        }
+
+        corners = rotatedCorners.map { corner ->
+            Vector2D(position.x + corner.x, position.y + corner.y)
+        }
+    }
+
+    private fun rotatePoint(point: Vector2D, angle: Float): Vector2D {
+        val cosA = cos(angle)
+        val sinA = sin(angle)
+        return Vector2D(
+            x = point.x * cosA - point.y * sinA,
+            y = point.x * sinA + point.y * cosA
         )
     }
 
-    private fun updateCurrentSprite(): Int {
-        if (distanceBeforeSpriteChange <= 0f) {
-            distanceBeforeSpriteChange = DEFAULT_SPRITE_CHANGE_DISTANCE
+//    fun checkCollision(other: Car): CollisionResult {
+//        if (this.corners.isEmpty() || other.corners.isEmpty()) {
+//            return CollisionResult(isColliding = false)
+//        }
+//        if (!getBoundingBox().overlaps(other.getBoundingBox())) {
+//            return CollisionResult(isColliding = false)
+//        }
+//        return detectCollision(this, other)
+//    }
 
-            if (currentSprite == 4) {
-                return 1
-            } else {
-                return currentSprite + 1
-            }
+    fun setSpeedAndDirectionFromVelocity(velocity: Vector2D) {
+        this._speed = velocity.getDistance()
+        if (this._speed > 0.001f) {
+            this._direction = atan2(velocity.y, velocity.x)
         }
-
-        return currentSprite
     }
 
-    private fun updateSpeed(directionAngle: Float?): Float {
-        if (directionAngle == null) {
-            decelerate()
-        } else {
-            accelerate()
-        }
+//    private fun getBoundingBox(): Rect {
+//        if (corners.isEmpty()) return Rect(position, Size.Zero)
+//
+//        val minX = corners.minOf { it.x }
+//        val minY = corners.minOf { it.y }
+//        val maxX = corners.maxOf { it.x }
+//        val maxY = corners.maxOf { it.y }
+//
+//        return Rect(minX, minY, maxX, maxY)
+//    }
 
-        return speed
+    private fun updateTurnInput(deltaTime: Float) {
+        _turnInput = lerp(_turnInput, _targetTurnInput, 0.01f, deltaTime)
     }
 
-    private fun handleAnglesDiff(newAngle: Float?): Float {
-        if (newAngle != null) {
-            direction = newAngle
-        }
-        return direction
+    private fun updateDriftState() {
+        _isDrifting = _speed > DRIFT_SPEED_THRESHOLD * _speedModifier &&
+                abs(_turnInput) > 0.5f
     }
 
-    private fun setSpeedModifier(speedModifier: Float): Float {
-        return speedModifier
+    private fun updateTurning(deltaTime: Float) {
+        if (_speed == 0f || _turnInput == 0f) return
+
+        val turnRate = if (_isDrifting) DRIFT_TURN_RATE else BASE_TURN_RATE
+        val turnAmount = _turnInput * turnRate * deltaTime * sqrt(_speed / MAX_SPEED)
+        _direction += turnAmount
     }
 
-    private fun updatePosition(deltaTime: Float): Vector2D {
-        val moveDistance = speed * deltaTime * speedModifier
-        val maxMove = MAP_SIZE * 0.5f
+    private fun updatePosition(deltaTime: Float) {
+        if (_speed == 0f) return
+
+        val moveDistance = _speed * deltaTime
+        val maxMove = MAP_SIZE
         val actualMove = moveDistance.coerceIn(-maxMove, maxMove)
 
         val newPosition = Vector2D(
-            x = (position.x + actualMove * cos(visualDirection)),
-            y = (position.y + actualMove * sin(visualDirection))
+            x = (position.x + actualMove * cos(_direction)).coerceIn(WIDTH, MAP_SIZE - WIDTH),
+            y = (position.y + actualMove * sin(_direction)).coerceIn(WIDTH, MAP_SIZE - WIDTH)
         )
 
-        distanceBeforeSpriteChange -= moveDistance
-        return newPosition
+        position = newPosition
     }
 
-    private fun decelerate() {
-        if (speed > MIN_SPEED) {
-            speed -= DECELERATION
+    private fun updateVisualDirection(deltaTime: Float) {
+        val targetDirection = if (_isDrifting) {
+            _direction + (DRIFT_ANGLE_OFFSET * _turnInput)
+        } else {
+            _direction
         }
-        if (speed < MIN_SPEED) {
-            speed = MIN_SPEED
-        }
+
+        val lagFactor = VISUAL_LAG_SPEED * deltaTime * 60f
+        visualDirection = lerp(visualDirection, targetDirection, lagFactor.coerceIn(0.01f, 1f), deltaTime)
     }
 
-    private fun accelerate() {
-        if (speed < MAX_SPEED) {
-            speed += ACCELERATION
-        }
-        if (speed > MAX_SPEED) {
-            speed = MAX_SPEED
-        }
+    fun accelerate(deltaTime: Float) {
+        _targetSpeed = min(MAX_SPEED * _speedModifier, _targetSpeed + ACCELERATION * deltaTime * _speedModifier)
+        _speed = lerp(_speed, _targetSpeed, 0.001f, deltaTime)
+        _isAccelerating = true
     }
 
-    private fun updateVisualDirection(): Float {
-        var angleDiff = direction - visualDirection
+    fun decelerate(deltaTime: Float) {
+        _targetSpeed = max(MIN_SPEED, _targetSpeed - DECELERATION * deltaTime * _speedModifier)
+        _speed = lerp(_speed, _targetSpeed, 0.001f, deltaTime)
+        _isAccelerating = false
+    }
 
-        while (angleDiff <= -PI) angleDiff += (2 * PI).toFloat()
-        while (angleDiff > PI) angleDiff -= (2 * PI).toFloat()
+    private fun lerp(start: Float, end: Float, factor: Float, deltaTime: Float): Float {
+        return start + (end - start) * factor * deltaTime * 60f
+    }
 
-        var directionShift =
-            angleDiff * VISUAL_LAG_SPEED * (1 + speed / MAX_SPEED)
+    fun startTurn(direction: Float) {
+        _targetTurnInput = direction.coerceIn(-1f, 1f)
+    }
 
-        if (abs(directionShift) > MAX_DIRECTION_CHANGE) {
-            directionShift = if (directionShift > 0) {
-                MAX_DIRECTION_CHANGE
-            } else {
-                -MAX_DIRECTION_CHANGE
-            }
-        }
+    fun stopTurn() {
+        _targetTurnInput = 0f
+    }
 
-        visualDirection += directionShift
-
-        return visualDirection
+    fun reset(position: Vector2D = Vector2D(5f, 5f)) {
+        this.position = position
+        _speed = 0f
+        _direction = 0f
+        visualDirection = 0f
+        _turnInput = 0f
+        _isDrifting = false
+        _speedModifier = 1f
+        updateCorners()
     }
 }

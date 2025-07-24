@@ -1,31 +1,35 @@
 package domain
 
 import mobility.domain.Vector2D
-import kotlin.collections.sortWith
+import kotlin.math.abs
 import kotlin.math.atan2
+import kotlin.math.max
 import kotlin.random.Random
 
 class GameMap private constructor(
-    private val grid: Array<IntArray>,
+    val grid: Array<IntArray>,
     val width: Int,
     val height: Int,
     val finishCellPos: Vector2D
 ) {
     enum class TerrainType(val speedModifier: Float) {
         ROAD(speedModifier = 1.0f),
-        GRASS(speedModifier = 0.2f),
-        ABYSS(speedModifier = .0f)
+        GRASS(speedModifier = 0.5f),
+        ABYSS(speedModifier = .0f),
+        WATER(speedModifier = 0.3f)
     }
 
     companion object {
-        private const val DEFAULT_MAP_WIDTH = 12
-        private const val DEFAULT_MAP_HEIGHT = 12
-        private const val DEFAULT_CORE_POINT = 8
+        private const val DEFAULT_MAP_WIDTH = 13
+        private const val DEFAULT_MAP_HEIGHT = 13
+        private const val DEFAULT_CORE_POINT = 6
+        private const val DEFAULT_WATER_PROPABILITY = 0.2f
 
         fun generateDungeonMap(
             width: Int = DEFAULT_MAP_WIDTH,
             height: Int = DEFAULT_MAP_HEIGHT,
-            roomCount: Int = DEFAULT_CORE_POINT
+            roomCount: Int = DEFAULT_CORE_POINT,
+            waterProbability: Float = DEFAULT_WATER_PROPABILITY
         ): GameMap {
             val grid: Array<IntArray> = Array(size = height) { IntArray(size = width) }
 
@@ -35,9 +39,9 @@ class GameMap private constructor(
             generateCoresInternal(grid, actualRoomCount)
             generateRoadsInternal(grid)
             removeDeadEndsInternal(grid)
-            determinationCellTypesInternal(grid)
             val startCellPos: Vector2D = findStartCellInternal(grid)
-
+            createWaterCellsInternal(grid, startCellPos, waterProbability)
+            determinationCellTypesInternal(grid)
             return GameMap(grid, width, height, startCellPos)
         }
 
@@ -115,30 +119,64 @@ class GameMap private constructor(
         }
 
         private fun removeDeadEndsInternal(grid: Array<IntArray>) {
-            var deadEndRemovedInPass: Boolean
-            val width = grid[0].size
-            val height = grid.size
-
+            var removedSomething: Boolean
             do {
-                deadEndRemovedInPass = false
-                for (y in 1 until height - 1) {
-                    for (x in 1 until width - 1) {
-                        if (grid[y][x] == 2) {
-                            var roadNeighbors = 0
+                removedSomething = false
+                val deadEnds = findDeadEndCells(grid)
 
-                            if (grid[y - 1][x] == 1 || grid[y - 1][x] == 2) roadNeighbors++
-                            if (grid[y + 1][x] == 1 || grid[y + 1][x] == 2) roadNeighbors++
-                            if (grid[y][x - 1] == 1 || grid[y][x - 1] == 2) roadNeighbors++
-                            if (grid[y][x + 1] == 1 || grid[y][x + 1] == 2) roadNeighbors++
+                for ((x, y) in deadEnds) {
+                    if (getRoadNeighbors(grid, x, y).size == 1) {
+                        grid[y][x] = 0
+                        removedSomething = true
+                    }
+                }
+            } while (removedSomething)
+        }
 
-                            if (roadNeighbors <= 1) {
-                                grid[y][x] = 0
-                                deadEndRemovedInPass = true
-                            }
+        private fun findDeadEndCells(grid: Array<IntArray>): List<Pair<Int, Int>> {
+            val deadEnds = mutableListOf<Pair<Int, Int>>()
+            for (y in 1 until grid.size - 1) {
+                for (x in 1 until grid[0].size - 1) {
+                    if (grid[y][x] in listOf(1, 2) && getRoadNeighbors(grid, x, y).size == 1) {
+                        deadEnds.add(x to y)
+                    }
+                }
+            }
+            return deadEnds
+        }
+
+        private fun getRoadNeighbors(grid: Array<IntArray>, x: Int, y: Int): List<Pair<Int, Int>> {
+            val neighbors = mutableListOf<Pair<Int, Int>>()
+            val directions = listOf(0 to -1, 0 to 1, -1 to 0, 1 to 0)
+            for ((dx, dy) in directions) {
+                val nx = x + dx
+                val ny = y + dy
+                if (ny in grid.indices && nx in grid[ny].indices && grid[ny][nx] in listOf(1, 2)) {
+                    neighbors.add(nx to ny)
+                }
+            }
+            return neighbors
+        }
+
+        private fun createWaterCellsInternal(
+            grid: Array<IntArray>,
+            startPosition: Vector2D,
+            waterProbability: Float
+        ) {
+            val waterRoomCode = 300
+
+            for (y in 1 until grid.size - 1) {
+                for (x in 1 until grid[y].size - 1) {
+                    if (grid[y][x] / 100 == 2 &&
+                        !(x == startPosition.x.toInt() && y == startPosition.y.toInt())
+                    ) {
+
+                        if (Random.nextFloat() < waterProbability) {
+                            grid[y][x] = waterRoomCode
                         }
                     }
                 }
-            } while (deadEndRemovedInPass)
+            }
         }
 
         private fun determinationCellTypesInternal(grid: Array<IntArray>) {
@@ -163,6 +201,7 @@ class GameMap private constructor(
                         else if (top == 0 && bottom != 0 && left == 0 && right != 0) index = 105
                         else if (top == 0 && bottom != 0 && left != 0 && right == 0) index = 106
                         else index = 100
+
                     } else if (currentCellType == 2) {
                         if (top == 0 && bottom == 0 && left != 0 && right != 0) index = 201
                         else if (top != 0 && bottom != 0 && left == 0 && right == 0) index = 202
@@ -202,6 +241,7 @@ class GameMap private constructor(
         return when (grid[y][x] / 100) {
             1 -> TerrainType.ROAD
             2 -> TerrainType.ROAD
+            3 -> TerrainType.WATER
             else -> TerrainType.GRASS
         }
     }
