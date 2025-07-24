@@ -188,7 +188,6 @@ class GameWebSocketHandler {
             if (isJoined) {
                 sendToSession(session, JoinedRoomResponse(room.id))
                 broadcastToRoom(player.roomId!!, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
-                sendToSession(session, InfoResponse("You have joined room: ${room.name}"))
             } else {
                 sendErrorToSession(session, ServerException(request.name, "Failed to join room '${room.name}'"))
             }
@@ -206,7 +205,6 @@ class GameWebSocketHandler {
                 sendErrorToSession(session, ServerException("LEAVE_ROOM", "Player is not init"))
                 return
             }
-
             val player = GameRoomManager.players[playerId] ?: run {
                 sendErrorToSession(session, ServerException("LEAVE_ROOM", "Player with ID $playerId not found"))
                 return
@@ -215,6 +213,7 @@ class GameWebSocketHandler {
             logger.info("Leave room, ${player.name} from ${GameRoomManager.rooms[player.roomId]?.name}")
 
             val currentRoomId = player.roomId
+
             if (currentRoomId == null) {
                 sendErrorToSession(session, ServerException("LEAVE_ROOM", "Player is not in any room"))
                 return
@@ -223,7 +222,6 @@ class GameWebSocketHandler {
             GameRoomManager.leaveRoom(playerId)
 
             sendToSession(session, LeftRoomResponse(currentRoomId))
-            sendToSession(session, InfoResponse("You have left room: $currentRoomId"))
 
             val room = GameRoomManager.rooms[currentRoomId]
             if (room != null && room.players.isEmpty()) {
@@ -232,7 +230,6 @@ class GameWebSocketHandler {
             }
 
             broadcastToRoom(player.roomId!!, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
-            broadcastToRoom(currentRoomId, PlayerDisconnectedResponse(playerId), playerId)
 
             if (GameRoomManager.rooms[currentRoomId]?.players?.isEmpty() == true) {
                 GameRoomManager.rooms.remove(currentRoomId)
@@ -270,7 +267,6 @@ class GameWebSocketHandler {
             }
 
             sendToSession(session, StartedGameResponse(currentRoomId, currentRoom.getGameMap()))
-            sendToSession(session, InfoResponse("You have started the game in room $currentRoomId"))
 
             currentRoom.state = GameRoomState.COUNTDOWN
             currentRoom.startCountdown(this)
@@ -295,6 +291,7 @@ class GameWebSocketHandler {
             }
 
             val currentRoomId = player.roomId
+
             if (currentRoomId == null) {
                 sendErrorToSession(session, ServerException(request.name, "Player is not in any room to do actions"))
                 return
@@ -304,9 +301,6 @@ class GameWebSocketHandler {
             // TODO: логика обработки действий (их валидность)
             //
 
-            println("Player ${player.name} (${player.id}) in room $currentRoomId performed action: ${request.name}")
-
-            sendToSession(session, PlayerActionResponse("Action '${request.name}' received."))
             broadcastToRoom(currentRoomId, PlayerActionResponse("Player ${player.name} performed action: ${request.name}"), playerId)
 
         } catch (e: Exception) {
