@@ -102,12 +102,12 @@ data class Car(
 //        return detectCollision(this, other)
 //    }
 
-//    fun setSpeedAndDirectionFromVelocity(velocity: Vector2D) {
-//        this._speed = velocity.getDistance()
-//        if (this._speed > 0.001f) {
-//            this._direction = atan2(velocity.y, velocity.x)
-//        }
-//    }
+    fun setSpeedAndDirectionFromVelocity(velocity: Vector2D) {
+        this._speed = velocity.getDistance()
+        if (this._speed > 0.001f) {
+            this._direction = atan2(velocity.y, velocity.x)
+        }
+    }
 
 //    private fun getBoundingBox(): Rect {
 //        if (corners.isEmpty()) return Rect(position, Size.Zero)

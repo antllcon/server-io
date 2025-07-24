@@ -8,7 +8,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import mobility.domain.CollisionResult
 import mobility.domain.Vector2D
+import mobility.domain.detectCollision
+import mobility.domain.handleCollision
 import mobility.service.GameWebSocketHandler
 import org.slf4j.LoggerFactory
 import java.util.UUID
@@ -81,6 +84,17 @@ class GameRoom(
                         if (input.isAccelerating) player.car.accelerate(deltaTime)
                         else player.car.decelerate(deltaTime)
 
+                        //FIXME: it's possible that it may cause some errors during collisions
+                        //FIXME: because the collision itself may be handled twice
+                        for (otherPlayer in players) {
+                            if (otherPlayer != player) {
+                                val collisionResult = detectCollision(player.car, otherPlayer.car)
+                                if (collisionResult.isColliding) {
+                                    handleCollision(player.car, otherPlayer.car, collisionResult)
+                                }
+                            }
+                        }
+
                         if (input.turnDirection != 0f) {
                             player.car.startTurn(input.turnDirection)
                         } else {
@@ -119,10 +133,10 @@ class GameRoom(
                         id = p.id,
                         posX = p.car.position.x,
                         posY = p.car.position.y,
-                        direction = p.car.direction,
+                        visualDirection = p.car.visualDirection,
                         isFinished = p.ringsCrossed == RINGS_TO_CROSS_TO_FINISH
                     )
-                    logger.info("Server: Sending PlayerStateDto for ${p.id}: PosX=${dto.posX}, PosY=${dto.posY}, Direction=${dto.direction}")
+                    logger.info("Server: Sending PlayerStateDto for ${p.id}: PosX=${dto.posX}, PosY=${dto.posY}, Direction=${dto.visualDirection}")
                     dto
                 }
 
