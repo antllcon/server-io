@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 class GameWebSocketHandler {
 
-    val sessionToPlayerId = ConcurrentHashMap<WebSocketSession, String>()
+    private val sessionToPlayerId = ConcurrentHashMap<WebSocketSession, String>()
     private val logger = LoggerFactory.getLogger(GameWebSocketHandler::class.java)
 
     suspend fun handleSession(session: WebSocketServerSession) {
@@ -101,25 +101,12 @@ class GameWebSocketHandler {
         val player = GameRoomManager.players[playerId] ?: return
 
         logger.info("Disconnect, ${player.name}")
+        val roomId = player.roomId ?: return
 
-        if (player.roomId.isNullOrEmpty()) {
-            return
-        }
+        broadcastToRoom(roomId, PlayerDisconnectedResponse(playerId))
+        broadcastToRoom(roomId, PlayerConnectedResponse("", GameRoomManager.getPlayersNames()))
 
-        val roomId = player.roomId
-        GameRoomManager.removePlayer(playerId)
-
-        val room = GameRoomManager.rooms[roomId]
-        if (room != null && room.players.isEmpty()) {
-            room.stopGameLoop()
-            GameRoomManager.rooms.remove(roomId)
-        }
-
-        broadcastToRoom(player.roomId!!, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
-
-        if (GameRoomManager.rooms[roomId]?.players?.isEmpty() == true) {
-            GameRoomManager.rooms.remove(roomId)
-        }
+        GameRoomManager.cleanupEmptyRoom(roomId)
     }
 
     suspend fun broadcastToRoom(roomId: String, message: ServerMessage, exceptPlayerId: String? = null) {
@@ -142,18 +129,7 @@ class GameWebSocketHandler {
         try {
             logger.info("Join room, ${request.name}")
 
-            val playerId = sessionToPlayerId[session] ?: run {
-                sendErrorToSession(session, ServerException(request.name, "Player is not init"))
-                return
-            }
-            val player = GameRoomManager.players[playerId] ?: run {
-                sendErrorToSession(session, ServerException(request.name, "Failed to find player with ID $playerId"))
-                return
-            }
-            if (!player.roomId.isNullOrEmpty()) {
-                sendErrorToSession(session, ServerException(request.name, "Player already in room"))
-                return
-            }
+            val player = getAndValidateNewPlayerOrSendError(session, request.name) ?: return
 
             val targetRoomIdOrName = request.name
             val room = GameRoomManager.rooms[targetRoomIdOrName]
@@ -189,41 +165,15 @@ class GameWebSocketHandler {
     }
 
     suspend fun handleLeaveRoom(session: WebSocketSession) {
+        val (player, roomId) = getAndValidatePlayerInRoomOrSendError(session, "LEAVE_ROOM") ?: return
+        logger.info("Leave room, ${player.name} from ${GameRoomManager.rooms[player.roomId]?.name}")
+
         try {
+            GameRoomManager.leaveRoom(player.id)
+            sendToSession(session, LeftRoomResponse(roomId))
 
-            val playerId = sessionToPlayerId[session] ?: run {
-                sendErrorToSession(session, ServerException("LEAVE_ROOM", "Player is not init"))
-                return
-            }
-            val player = GameRoomManager.players[playerId] ?: run {
-                sendErrorToSession(session, ServerException("LEAVE_ROOM", "Player with ID $playerId not found"))
-                return
-            }
-
-            logger.info("Leave room, ${player.name} from ${GameRoomManager.rooms[player.roomId]?.name}")
-
-            val currentRoomId = player.roomId
-
-            if (currentRoomId == null) {
-                sendErrorToSession(session, ServerException("LEAVE_ROOM", "Player is not in any room"))
-                return
-            }
-
-            GameRoomManager.leaveRoom(playerId)
-
-            sendToSession(session, LeftRoomResponse(currentRoomId))
-
-            val room = GameRoomManager.rooms[currentRoomId]
-            if (room != null && room.players.isEmpty()) {
-                room.stopGameLoop()
-                GameRoomManager.rooms.remove(currentRoomId)
-            }
-
-            broadcastToRoom(player.roomId!!, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
-
-            if (GameRoomManager.rooms[currentRoomId]?.players?.isEmpty() == true) {
-                GameRoomManager.rooms.remove(currentRoomId)
-            }
+            broadcastToRoom(roomId, PlayerDisconnectedResponse(player.id), player.id)
+            broadcastToRoom(roomId, PlayerConnectedResponse("", GameRoomManager.getPlayersNames()))
 
         } catch (e: Exception) {
             sendErrorToSession(session, ServerException("LEAVE_ROOM", "Failed to leave room: ${e.message}"))
@@ -234,29 +184,16 @@ class GameWebSocketHandler {
         try {
             logger.info("Starting game, ${request.name}")
 
-            val playerId = sessionToPlayerId[session] ?: run {
-                sendErrorToSession(session, ServerException(request.name, "Player is not init"))
-                return
-            }
-            val player = GameRoomManager.players[playerId] ?: run {
-                sendErrorToSession(session, ServerException(request.name, "Player with ID $playerId not found"))
-                return
-            }
+            val (player, roomId) = getAndValidatePlayerInRoomOrSendError(session, request.name) ?: return
 
-            val currentRoomId = player.roomId
-            if (currentRoomId == null) {
-                sendErrorToSession(session, ServerException(request.name, "There is no such room!"))
-                return
-            }
-
-            val currentRoom = GameRoomManager.rooms[currentRoomId]!!
+            val currentRoom = GameRoomManager.rooms[roomId]!!
 
             if (player != currentRoom.players[0]) {
                 sendErrorToSession(session, ServerException(request.name, "This player is not an admin!"))
                 return
             }
 
-            sendToSession(session, StartedGameResponse(currentRoomId, currentRoom.getGameMap()))
+            sendToSession(session, StartedGameResponse(roomId, currentRoom.getGameMap()))
 
             currentRoom.state = GameRoomState.COUNTDOWN
             currentRoom.startCountdown(this)
@@ -338,5 +275,16 @@ class GameWebSocketHandler {
         val player = getPlayerOrSendError(session, playerId, context) ?: return null
         if (!ensurePlayerNotInRoom(session, player, context)) return null
         return player
+    }
+
+    private suspend fun getAndValidatePlayerInRoomOrSendError(session: WebSocketSession, context: String): Pair<Player, String>? {
+        val playerId = getPlayerIdOrSendError(session, context) ?: return null
+        val player = getPlayerOrSendError(session, playerId, context) ?: return null
+        val roomId = player.roomId
+        if (roomId.isNullOrEmpty()) {
+            sendErrorToSession(session, ServerException(context, "Player is not in any room"))
+            return null
+        }
+        return Pair(player, roomId)
     }
 }
