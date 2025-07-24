@@ -191,6 +191,7 @@ class GameWebSocketHandler {
             if (isJoined) {
                 sendToSession(session, JoinedRoomResponse(room.id))
                 broadcastToRoom(request.name, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
+                logger.info(GameRoomManager.getPlayersNames().first())
                 sendToSession(session, InfoResponse("You have joined room: ${room.name}"))
             } else {
                 sendErrorToSession(session, ServerException(request.name, "Failed to join room '${room.name}'"))
