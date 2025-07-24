@@ -76,18 +76,8 @@ class GameWebSocketHandler {
                 sendErrorToSession(session, ServerException(request.name, "Room name cannot be empty"))
                 return
             }
-            val playerId = sessionToPlayerId[session] ?: run {
-                sendErrorToSession(session, ServerException(request.name, "Player is not init"))
-                return
-            }
-            val player = GameRoomManager.players[playerId] ?: run {
-                sendErrorToSession(session, ServerException(request.name, "Failed to find player with id: $playerId"))
-                return
-            }
-            if (!player.roomId.isNullOrEmpty()) {
-                sendErrorToSession(session, ServerException(request.name, "Player already in room"))
-                return
-            }
+
+            val player = getAndValidateNewPlayerOrSendError(session, request.name) ?: return
 
             val newRoom = GameRoomManager.createRoom(request.name)
             val isJoined = GameRoomManager.joinRoom(player.id, newRoom.id)
@@ -315,5 +305,38 @@ class GameWebSocketHandler {
         val room = GameRoomManager.rooms[roomId] ?: return
 
         room.playerInputs[playerId] = request
+    }
+
+    private suspend fun getPlayerIdOrSendError(session: WebSocketSession, context: String): String? {
+        val playerId = sessionToPlayerId[session]
+        if (playerId == null) {
+            sendErrorToSession(session, ServerException(context, "Player is not initialized"))
+            return null
+        }
+        return playerId
+    }
+
+    private suspend fun getPlayerOrSendError(session: WebSocketSession, playerId: String, context: String): Player? {
+        val player = GameRoomManager.players[playerId]
+        if (player == null) {
+            sendErrorToSession(session, ServerException(context, "Failed to find player with id: $playerId"))
+            return null
+        }
+        return player
+    }
+
+    private suspend fun ensurePlayerNotInRoom(session: WebSocketSession, player: Player, context: String): Boolean {
+        if (!player.roomId.isNullOrEmpty()) {
+            sendErrorToSession(session, ServerException(context, "Player already in room"))
+            return false
+        }
+        return true
+    }
+
+    private suspend fun getAndValidateNewPlayerOrSendError(session: WebSocketSession, context: String): Player? {
+        val playerId = getPlayerIdOrSendError(session, context) ?: return null
+        val player = getPlayerOrSendError(session, playerId, context) ?: return null
+        if (!ensurePlayerNotInRoom(session, player, context)) return null
+        return player
     }
 }
