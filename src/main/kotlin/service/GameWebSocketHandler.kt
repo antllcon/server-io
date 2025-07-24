@@ -72,6 +72,7 @@ class GameWebSocketHandler {
 
     suspend fun handleCreateRoom(session: WebSocketSession, request: CreateRoomRequest) {
         try {
+            logger.info("Creat!!!!!!!")
             val playerId = sessionToPlayerId[session] ?: run {
                 sendErrorToSession(session, ServerException(request.name, "Player is not init"))
                 return
