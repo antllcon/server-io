@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 class GameWebSocketHandler {
 
-    private val sessionToPlayerId = ConcurrentHashMap<WebSocketSession, String>()
+    val sessionToPlayerId = ConcurrentHashMap<WebSocketSession, String>()
     private val logger = LoggerFactory.getLogger(GameWebSocketHandler::class.java)
 
     suspend fun handleSession(session: WebSocketServerSession) {
@@ -61,12 +61,12 @@ class GameWebSocketHandler {
 
     suspend fun handleInitPlayer(session: WebSocketSession, request: InitPlayerRequest) {
         try {
+            logger.info("Init player, ${request.name}")
+
             val player = GameRoomManager.registerPlayer(request.name, session)
-
-            logger.info("Init player, ${player.name}")
-
             sessionToPlayerId[session] = player.id
             sendToSession(session, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
+
         } catch (e: Exception) {
             sendErrorToSession(session, ServerException(request.name, "Failed to init player: ${e.message}"))
             return
@@ -81,12 +81,10 @@ class GameWebSocketHandler {
                 sendErrorToSession(session, ServerException(request.name, "Player is not init"))
                 return
             }
-
             val player = GameRoomManager.players[playerId] ?: run {
                 sendErrorToSession(session, ServerException(request.name, "Failed to find player with id: $playerId"))
                 return
             }
-
             if (player.roomId != null) {
                 sendErrorToSession(session, ServerException(request.name, "Player already in room."))
                 return
