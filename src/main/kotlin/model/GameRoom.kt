@@ -8,7 +8,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import mobility.domain.CollisionResult
 import mobility.domain.Vector2D
 import mobility.domain.detectCollision
 import mobility.domain.handleCollision
@@ -141,7 +140,6 @@ class GameRoom(
                     logger.info("Server: Sending PlayerStateDto for ${p.id}: PosX=${dto.posX}, PosY=${dto.posY}, Direction=${dto.visualDirection}")
                     dto
                 }
-
 
                 // 3. Рассылаем всем в комнате
                 handler.broadcastToRoom(id, GameStateUpdateResponse(playerStates))
