@@ -139,7 +139,11 @@ class GameWebSocketHandler {
     }
 
     suspend fun broadcastToRoom(roomId: String, message: ServerMessage, exceptPlayerId: String? = null) {
+
         val room = GameRoomManager.rooms[roomId] ?: return
+
+        logger.info("${room.name} broadcast to room $roomId")
+
         room.players.forEach { player ->
             logger.info("Broadcast ${player.name} в комнату ${room.id}")
 
