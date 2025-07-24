@@ -51,4 +51,15 @@ object GameRoomManager {
 
         return names
     }
+
+    fun cleanupEmptyRoom(roomId: String): Boolean {
+        val room = rooms[roomId]
+        if (room != null && room.players.isEmpty()) {
+            println("Room $roomId is empty, stopping loop and removing it.")
+            room.stopGameLoop()
+            rooms.remove(roomId)
+            return true
+        }
+        return false
+    }
 }
