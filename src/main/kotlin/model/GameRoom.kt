@@ -70,7 +70,7 @@ class GameRoom(
 
         gameLoopJob = scope.launch {
             while (isActive) {
-                val deltaTime = serverTickRate / 1000f
+                val deltaTime = serverTickRate / 100f
 
                 // 1. Обновляем физику
                 players.forEach { player ->
