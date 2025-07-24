@@ -72,12 +72,13 @@ class GameWebSocketHandler {
 
     suspend fun handleCreateRoom(session: WebSocketSession, request: CreateRoomRequest) {
         try {
-            logger.info("Creat!!!!!!!")
+            logger.info("Create")
             val playerId = sessionToPlayerId[session] ?: run {
                 sendErrorToSession(session, ServerException(request.name, "Player is not init"))
                 return
             }
 
+            logger.info("Res")
             val player = GameRoomManager.players[playerId] ?: run {
                 sendErrorToSession(session, ServerException(request.name, "Failed to find player with id: $playerId"))
                 return
@@ -100,10 +101,11 @@ class GameWebSocketHandler {
             if (!isJoined) {
                 GameRoomManager.rooms.remove(newRoom.id)
                 sendErrorToSession(session, ServerException(request.name, "Failed to join room after creation"))
-                broadcastToRoom(request.name, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
-                logger.info("Create -> ${GameRoomManager.getPlayersNames().first()}")
                 return
             }
+
+            broadcastToRoom(request.name, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
+            logger.info("Create -> ${GameRoomManager.getPlayersNames().first()}")
 
             sendToSession(session, RoomCreatedResponse(newRoom.id))
             sendToSession(session, InfoResponse("You have created and joined room: ${newRoom.name}"))
