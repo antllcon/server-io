@@ -44,7 +44,7 @@ object GameRoomManager {
     }
 
     fun getPlayersNames(): Array<String> {
-        val names = emptyArray<String>()
+        val names = arrayOf("AZZAZZAZAAZAZ")
 
         players.forEach { _, player ->
             names.plus(player.name)
