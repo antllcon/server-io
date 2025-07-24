@@ -95,6 +95,7 @@ sealed interface ServerMessage {
     val type: ServerMessageType
 }
 
+// TODO: поменять название на roomPlayersResponse
 @Serializable
 @SerialName("PLAYER_CONNECTED")
 data class PlayerConnectedResponse(val playerId: String, val playerNames: Array<String>) : ServerMessage {

@@ -45,7 +45,6 @@ object GameRoomManager {
 
     fun getPlayersNames(): Array<String> {
         var names = emptyArray<String>()
-
         players.forEach { _, player ->
             names = names.plus(player.name)
         }
