@@ -34,6 +34,7 @@ data class Car(
     private var _direction: Float = 0f
     private var _turnInput: Float = 0f
     private var _isDrifting: Boolean = false
+    private var _isAccelerating: Boolean = false
     private var _speedModifier: Float = 1f
     private var _targetSpeed: Float = 0f
     private var _targetTurnInput: Float = 0f
@@ -42,6 +43,7 @@ data class Car(
     var direction: Float = 0.0f
     var visualDirection: Float = 0f
     val isDrifting: Boolean get() = _isDrifting
+    val isAccelerating: Boolean get() = _isAccelerating
     val mass: Float = 1f
     val momentOfInertia: Float = (1f / 12f) * mass * (WIDTH * WIDTH + LENGTH * LENGTH)
     var angularVelocity: Float = 0f
@@ -166,11 +168,13 @@ data class Car(
     fun accelerate(deltaTime: Float) {
         _targetSpeed = min(MAX_SPEED * _speedModifier, _targetSpeed + ACCELERATION * deltaTime * _speedModifier)
         _speed = lerp(_speed, _targetSpeed, 0.001f, deltaTime)
+        _isAccelerating = true
     }
 
     fun decelerate(deltaTime: Float) {
         _targetSpeed = max(MIN_SPEED, _targetSpeed - DECELERATION * deltaTime * _speedModifier)
         _speed = lerp(_speed, _targetSpeed, 0.001f, deltaTime)
+        _isAccelerating = false
     }
 
     private fun lerp(start: Float, end: Float, factor: Float, deltaTime: Float): Float {

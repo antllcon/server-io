@@ -63,7 +63,7 @@ class GameWebSocketHandler {
         try {
             val player = GameRoomManager.registerPlayer(request.name, session)
             sessionToPlayerId[session] = player.id
-            sendToSession(session, PlayerConnectedResponse(player.id, player.name))
+            sendToSession(session, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
 
         } catch (e: Exception) {
             sendErrorToSession(session, ServerException(request.name, "Failed to init player: ${e.message}"))

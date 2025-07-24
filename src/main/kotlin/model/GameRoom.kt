@@ -134,6 +134,8 @@ class GameRoom(
                         posX = p.car.position.x,
                         posY = p.car.position.y,
                         visualDirection = p.car.visualDirection,
+                        speed = p.car.speed,
+                        isAccelerating = p.car.isAccelerating,
                         isFinished = p.ringsCrossed == RINGS_TO_CROSS_TO_FINISH
                     )
                     logger.info("Server: Sending PlayerStateDto for ${p.id}: PosX=${dto.posX}, PosY=${dto.posY}, Direction=${dto.visualDirection}")

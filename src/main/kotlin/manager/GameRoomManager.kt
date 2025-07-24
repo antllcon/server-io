@@ -42,4 +42,14 @@ object GameRoomManager {
         leaveRoom(playerId)
         players.remove(playerId)
     }
+
+    fun getPlayersNames(): Array<String> {
+        val names = emptyArray<String>()
+
+        players.forEach { _, player ->
+            names.plus(player.name)
+        }
+
+        return names
+    }
 }
