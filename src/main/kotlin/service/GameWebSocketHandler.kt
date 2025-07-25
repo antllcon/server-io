@@ -144,6 +144,12 @@ class GameWebSocketHandler {
                 return
             }
 
+            val isNameTaken = room.players.any { it.name.equals(request.name, ignoreCase = true) }
+            if (isNameTaken) {
+                sendErrorToSession(session, ServerException(request.name, "Name '${request.name}' is already taken in this room"))
+                return
+            }
+
             if (room.state == GameRoomState.ONGOING || room.state == GameRoomState.ENDED) {
                 sendErrorToSession(session, ServerException(request.name, "Game in room ${room.name} is already started!"))
                 return

@@ -42,8 +42,13 @@ object GameRoomManager {
         players.remove(playerId)
     }
 
-    fun getPlayersNames(): Map<String, String> {
-        return players.values.associate { it.id to it.name }
+    fun getPlayersNames(): Array<String> {
+        var names = emptyArray<String>()
+        players.forEach { _, player ->
+            names = names.plus(player.name)
+        }
+
+        return names
     }
 
     fun cleanupEmptyRoom(roomId: String): Boolean {
