@@ -2,10 +2,9 @@ package mobility.model
 
 import domain.Car
 import io.ktor.websocket.WebSocketSession
-import java.util.UUID
 
 data class Player(
-    val id: String = UUID.randomUUID().toString(),
+    val id: String = (1..6).map { ('A'..'Z').random() }.joinToString(""),
     val name: String,
     @kotlinx.serialization.Transient
     val session: WebSocketSession,
