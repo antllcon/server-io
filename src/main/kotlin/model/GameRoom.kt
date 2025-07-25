@@ -67,6 +67,8 @@ class GameRoom(
             val basePosition = Vector2D(map.startCellPos.x + 0.4f, map.startCellPos.y + 0.5f)
             val finalPosition = Vector2D(basePosition.x + startPositionOffset.x, basePosition.y + startPositionOffset.y)
 
+             logger.info(finalPosition.toString())
+
             player.car = Car(
                 id = player.id,
                 playerName = player.name,
