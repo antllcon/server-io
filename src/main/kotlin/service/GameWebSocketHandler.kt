@@ -193,7 +193,12 @@ class GameWebSocketHandler {
                 return
             }
 
-            val starterPack = currentRoom.createStarterPack()
+            val starterPack = currentRoom.initGameAndCreateStarterPack()
+            if (starterPack == null) {
+                sendErrorToSession(session, ServerException(request.name, "Game has already been started or is in an invalid state."))
+                return
+            }
+
             val responseMessage = StartedGameResponse(roomId, starterPack)
             broadcastToRoom(roomId, responseMessage)
 

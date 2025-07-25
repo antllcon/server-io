@@ -41,28 +41,48 @@ class GameRoom(
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val serverTickRate = 50L
 
-    private val gameMap = GameMap.generateDungeonMap()
-    val checkpointManager = CheckpointManager(gameMap.route)
-    val initialDirection = when (gameMap.startDirection) {
-        GameMap.StartDirection.HORIZONTAL -> Car.DIRECTION_RIGHT
-        GameMap.StartDirection.VERTICAL -> Car.DIRECTION_UP
-    }
-
+    private var gameMap: GameMap? = null
+    private var checkpointManager: CheckpointManager? = null
 
     fun isFull(): Boolean = players.size >= maxPlayers
 
     fun getGameMap(): Array<IntArray> {
-        return gameMap.grid
+        return gameMap?.grid ?: return arrayOf()
     }
 
-    fun createStarterPack(): StarterPack {
+    fun initGameAndCreateStarterPack(): StarterPack? {
+        if (state != GameRoomState.LOBBY) return null
+
+        val map = GameMap.generateDungeonMap()
+        this.gameMap = map
+        this.checkpointManager = CheckpointManager(map.route)
+
+        val initialDirection = when (map.startDirection) {
+            GameMap.StartDirection.HORIZONTAL -> Car.DIRECTION_RIGHT
+            GameMap.StartDirection.VERTICAL -> Car.DIRECTION_UP
+        }
+
+        players.forEachIndexed { index, player ->
+            val startPositionOffset = Vector2D(index * 0.3f, 0f)
+            val basePosition = Vector2D(map.startCellPos.x + 0.4f, map.startCellPos.y + 0.5f)
+            val finalPosition = Vector2D(basePosition.x + startPositionOffset.x, basePosition.y + startPositionOffset.y)
+
+            player.car = Car(
+                id = player.id,
+                playerName = player.name,
+                position = finalPosition,
+                direction = initialDirection,
+                visualDirection = initialDirection
+            )
+        }
+
         return StarterPack(
-            mapGrid = this.gameMap.grid,
-            mapWidth = this.gameMap.width,
-            mapHeight = this.gameMap.height,
-            startPosition = Vector2D(this.gameMap.startCellPos.x, this.gameMap.startCellPos.y),
-            startDirection = this.gameMap.startDirection,
-            route = this.gameMap.route
+            mapGrid = map.grid,
+            mapWidth = map.width,
+            mapHeight = map.height,
+            startPosition = Vector2D(map.startCellPos.x, map.startCellPos.y),
+            startDirection = map.startDirection,
+            route = map.route
         )
     }
 
