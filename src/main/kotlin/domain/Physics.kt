@@ -110,7 +110,7 @@ private fun applyImpulse(car1: Car, car2: Car, result: CollisionResult) {
     val newV1 = v1 + (impulse / car1.mass)
     val newV2 = v2 - (impulse / car2.mass)
 
-    // Обновляем скорости
+//    // Обновляем скорости
     car1.setSpeedAndDirectionFromVelocity(newV1)
     car2.setSpeedAndDirectionFromVelocity(newV2)
 
