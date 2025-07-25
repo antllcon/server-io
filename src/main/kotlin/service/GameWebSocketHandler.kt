@@ -60,7 +60,7 @@ class GameWebSocketHandler {
 
             val player = GameRoomManager.registerPlayer(request.name, session)
             sessionToPlayerId[session] = player.id
-            sendToSession(session, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
+//            sendToSession(session, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
 
         } catch (e: Exception) {
             sendErrorToSession(session, ServerException(request.name, "Failed to init player: ${e.message}"))
@@ -104,7 +104,7 @@ class GameWebSocketHandler {
         val roomId = player.roomId ?: return
 
         broadcastToRoom(roomId, PlayerDisconnectedResponse(playerId))
-        broadcastToRoom(roomId, PlayerConnectedResponse("", GameRoomManager.getPlayersNames()))
+        broadcastToRoom(roomId, PlayerConnectedResponse("", GameRoomManager.getPlayersNames(roomId)))
 
         GameRoomManager.cleanupEmptyRoom(roomId)
     }
@@ -159,7 +159,7 @@ class GameWebSocketHandler {
 
             if (isJoined) {
                 sendToSession(session, JoinedRoomResponse(room.id))
-                broadcastToRoom(player.roomId!!, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames()))
+                broadcastToRoom(player.roomId!!, PlayerConnectedResponse(player.id, GameRoomManager.getPlayersNames(room.id)))
             } else {
                 sendErrorToSession(session, ServerException(request.name, "Failed to join room '${room.name}'"))
             }
@@ -179,7 +179,7 @@ class GameWebSocketHandler {
             sendToSession(session, LeftRoomResponse(roomId))
 
             broadcastToRoom(roomId, PlayerDisconnectedResponse(player.id), player.id)
-            broadcastToRoom(roomId, PlayerConnectedResponse("", GameRoomManager.getPlayersNames()))
+            broadcastToRoom(roomId, PlayerConnectedResponse("", GameRoomManager.getPlayersNames(roomId)))
 
         } catch (e: Exception) {
             sendErrorToSession(session, ServerException("LEAVE_ROOM", "Failed to leave room: ${e.message}"))
