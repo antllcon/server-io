@@ -24,7 +24,7 @@ enum class GameRoomState {
 }
 
 class GameRoom(
-    val id: String = UUID.randomUUID().toString(),
+    val id: String = (1..6).map { ('A'..'Z').random() }.joinToString(""),
     val name: String,
     val players: MutableList<Player> = mutableListOf(),
     var state: GameRoomState = GameRoomState.LOBBY,
