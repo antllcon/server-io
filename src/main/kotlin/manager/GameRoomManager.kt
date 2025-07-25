@@ -1,6 +1,5 @@
 package mobility.manager
 
-import domain.GameMap
 import io.ktor.websocket.WebSocketSession
 import mobility.model.GameRoom
 import mobility.model.Player

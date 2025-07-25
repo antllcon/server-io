@@ -193,13 +193,12 @@ class GameWebSocketHandler {
                 return
             }
 
-            sendToSession(session, StartedGameResponse(roomId, currentRoom.getGameMap()))
+            val starterPack = currentRoom.createStarterPack()
+            val responseMessage = StartedGameResponse(roomId, starterPack)
+            broadcastToRoom(roomId, responseMessage)
 
             currentRoom.state = GameRoomState.COUNTDOWN
             currentRoom.startCountdown(this)
-
-            logger.info("Started game, try to send map")
-            broadcastToRoom(player.roomId!!, StartedGameResponse(player.id, currentRoom.getGameMap()))
 
         } catch (_: Exception) {
             sendErrorToSession(session, ServerException(request.name, "Failed to start the game!"))

@@ -3,6 +3,7 @@ package mobility.model
 import domain.GameMap
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import mobility.domain.Vector2D
 
 // Enums remain the same
 enum class ClientMessageType {
@@ -160,30 +161,47 @@ data class LeftRoomResponse(val roomId: String) : ServerMessage {
     override val type: ServerMessageType get() = ServerMessageType.LEFT_ROOM
 }
 
-@Serializable
-@SerialName("STARTED_GAME")
-data class StartedGameResponse(val roomId: String, val gameMap: Array<IntArray>) : ServerMessage {
-    override val type: ServerMessageType get() = ServerMessageType.STARTED_GAME
 
-    //everything below this is the code that Android Studio added by itself,
-    //so I don't have a clue what the hell is this
+@Serializable
+data class StarterPack(
+    val mapGrid: Array<IntArray>,
+    val mapWidth: Int,
+    val mapHeight: Int,
+    val startPosition: Vector2D,
+    val startDirection: GameMap.StartDirection,
+    val route: List<Vector2D>,
+) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as StartedGameResponse
+        other as StarterPack
 
-        if (roomId != other.roomId) return false
-        if (!gameMap.contentDeepEquals(other.gameMap)) return false
+        if (mapWidth != other.mapWidth) return false
+        if (mapHeight != other.mapHeight) return false
+        if (!mapGrid.contentDeepEquals(other.mapGrid)) return false
+        if (startPosition != other.startPosition) return false
+        if (startDirection != other.startDirection) return false
+        if (route != other.route) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = roomId.hashCode()
-        result = 31 * result + gameMap.contentDeepHashCode()
+        var result = mapWidth.hashCode()
+        result = 31 * result + mapHeight.hashCode()
+        result = 31 * result + mapGrid.contentDeepHashCode()
+        result = 31 * result + startPosition.hashCode()
+        result = 31 * result + startDirection.hashCode()
+        result = 31 * result + route.hashCode()
         return result
     }
+}
+
+@Serializable
+@SerialName("STARTED_GAME")
+data class StartedGameResponse(val roomId: String, val starterPack: StarterPack) : ServerMessage {
+    override val type: ServerMessageType get() = ServerMessageType.STARTED_GAME
 }
 
 @Serializable
