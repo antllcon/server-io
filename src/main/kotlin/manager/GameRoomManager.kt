@@ -42,10 +42,10 @@ object GameRoomManager {
         players.remove(playerId)
     }
 
-    fun getPlayersNames(): Array<String> {
-        var names = emptyArray<String>()
+    fun getPlayersNames(): Map<String, String> {
+        val names = emptyMap<String, String>().toMutableMap()
         players.forEach { _, player ->
-            names = names.plus(player.name)
+            names += player.name to player.id
         }
 
         return names

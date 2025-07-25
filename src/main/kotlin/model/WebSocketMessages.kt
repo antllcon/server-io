@@ -99,30 +99,8 @@ sealed interface ServerMessage {
 // TODO: поменять название на roomPlayersResponse
 @Serializable
 @SerialName("PLAYER_CONNECTED")
-data class PlayerConnectedResponse(val playerId: String, val playerNames: Array<String>) : ServerMessage {
+data class PlayerConnectedResponse(val playerId: String, val playerNames: Map<String, String>) : ServerMessage {
     override val type: ServerMessageType get() = ServerMessageType.PLAYER_CONNECTED
-
-    //everything below this is the code that Android Studio added by itself,
-    //so I don't have a clue what the hell is this
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as PlayerConnectedResponse
-
-        if (playerId != other.playerId) return false
-        if (!playerNames.contentEquals(other.playerNames)) return false
-        if (type != other.type) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = playerId.hashCode()
-        result = 31 * result + playerNames.contentHashCode()
-        result = 31 * result + type.hashCode()
-        return result
-    }
 }
 
 @Serializable
