@@ -63,8 +63,8 @@ class GameRoom(
         }
 
         players.forEachIndexed { index, player ->
-            val startPositionOffset = Vector2D(index * 0.3f, 0f)
-            val basePosition = Vector2D(map.startCellPos.x + 0.4f, map.startCellPos.y + 0.5f)
+            val startPositionOffset = Vector2D(index * 0.1f, 0f)
+            val basePosition = Vector2D(map.startCellPos.x + 0.2f, map.startCellPos.y + 0.6f)
             val finalPosition = Vector2D(basePosition.x + startPositionOffset.x, basePosition.y + startPositionOffset.y)
 
              logger.info(finalPosition.toString())
