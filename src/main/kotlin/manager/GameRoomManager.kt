@@ -43,7 +43,7 @@ object GameRoomManager {
     }
 
     fun getPlayersNames(): Map<String, String> {
-        return players.values.associate { it.name to it.id }
+        return players.values.associate { it.id to it.name }
     }
 
     fun cleanupEmptyRoom(roomId: String): Boolean {
