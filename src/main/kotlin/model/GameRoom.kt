@@ -80,7 +80,7 @@ class GameRoom(
             )
 
             initialPlayerStates.add(finalPosition)
-            logger.info(initialPlayerStates.toString())
+
         }
 
         return StarterPack(
