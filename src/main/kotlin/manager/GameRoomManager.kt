@@ -43,12 +43,7 @@ object GameRoomManager {
     }
 
     fun getPlayersNames(): Map<String, String> {
-        val names = emptyMap<String, String>().toMutableMap()
-        players.forEach { _, player ->
-            names += player.name to player.id
-        }
-
-        return names
+        return players.values.associate { it.name to it.id }
     }
 
     fun cleanupEmptyRoom(roomId: String): Boolean {
