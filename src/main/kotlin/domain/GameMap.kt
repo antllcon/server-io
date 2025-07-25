@@ -1,29 +1,51 @@
 package domain
 
 import mobility.domain.Vector2D
-import kotlin.math.abs
 import kotlin.math.atan2
-import kotlin.math.max
 import kotlin.random.Random
 
 class GameMap private constructor(
     val grid: Array<IntArray>,
     val width: Int,
     val height: Int,
-    val finishCellPos: Vector2D
+    val startCellPos: Vector2D,
+    val startDirection: StartDirection,
+    val route: List<Vector2D>
 ) {
+    enum class StartDirection {
+        HORIZONTAL,
+        VERTICAL
+    }
+
     enum class TerrainType(val speedModifier: Float) {
         ROAD(speedModifier = 1.0f),
-        GRASS(speedModifier = 0.5f),
-        ABYSS(speedModifier = .0f),
-        WATER(speedModifier = 0.3f)
+        GRASS(speedModifier = 0.6f),
+        WATER(speedModifier = 0.4f),
+        ABYSS(speedModifier = .0f)
     }
 
     companion object {
         private const val DEFAULT_MAP_WIDTH = 13
         private const val DEFAULT_MAP_HEIGHT = 13
-        private const val DEFAULT_CORE_POINT = 6
-        private const val DEFAULT_WATER_PROPABILITY = 0.2f
+        private const val DEFAULT_CORE_POINT = 15
+        private const val DEFAULT_WATER_PROPABILITY = 0.1f
+        private const val EMPTY_CELL_CODE = 0
+        private const val CORE_CELL_CODE = 1
+        private const val ROAD_CELL_CODE = 2
+        private const val WATER_CORE_CODE = 200
+        private const val WATER_ROAD_CODE = 400
+
+        private data class StartInfo(
+            val position: Vector2D,
+            val direction: StartDirection
+        )
+
+        private data class CellNode(
+            val x: Int,
+            val y: Int,
+            val cameFromX: Int?,
+            val cameFromY: Int?
+        )
 
         fun generateDungeonMap(
             width: Int = DEFAULT_MAP_WIDTH,
@@ -32,17 +54,28 @@ class GameMap private constructor(
             waterProbability: Float = DEFAULT_WATER_PROPABILITY
         ): GameMap {
             val grid: Array<IntArray> = Array(size = height) { IntArray(size = width) }
-
             val maxPossibleRooms = ((width - 2) / 2 + 1) * ((height - 2) / 2 + 1)
             val actualRoomCount = roomCount.coerceAtMost(maxPossibleRooms)
 
             generateCoresInternal(grid, actualRoomCount)
             generateRoadsInternal(grid)
             removeDeadEndsInternal(grid)
-            val startCellPos: Vector2D = findStartCellInternal(grid)
-            createWaterCellsInternal(grid, startCellPos, waterProbability)
+
+            createWaterCellsInternal(grid, waterProbability)
             determinationCellTypesInternal(grid)
-            return GameMap(grid, width, height, startCellPos)
+
+            val startInfo = findStartCellInternal(grid)
+
+            val route = generateRouteFromStart(grid, startInfo.position)
+
+            return GameMap(
+                grid,
+                width,
+                height,
+                startInfo.position,
+                startInfo.direction,
+                route
+            )
         }
 
         private fun generateCoresInternal(grid: Array<IntArray>, roomCount: Int) {
@@ -109,12 +142,12 @@ class GameMap private constructor(
 
             while (x1 != x2) {
                 x1 += if (x2 > x1) 1 else -1
-                if (grid[y1][x1] == 0) grid[y1][x1] = 2
+                if (grid[y1][x1] == EMPTY_CELL_CODE) grid[y1][x1] = ROAD_CELL_CODE
             }
 
             while (y1 != y2) {
                 y1 += if (y2 > y1) 1 else -1
-                if (grid[y1][x1] == 0) grid[y1][x1] = 2
+                if (grid[y1][x1] == EMPTY_CELL_CODE) grid[y1][x1] = ROAD_CELL_CODE
             }
         }
 
@@ -126,7 +159,7 @@ class GameMap private constructor(
 
                 for ((x, y) in deadEnds) {
                     if (getRoadNeighbors(grid, x, y).size == 1) {
-                        grid[y][x] = 0
+                        grid[y][x] = EMPTY_CELL_CODE
                         removedSomething = true
                     }
                 }
@@ -137,7 +170,12 @@ class GameMap private constructor(
             val deadEnds = mutableListOf<Pair<Int, Int>>()
             for (y in 1 until grid.size - 1) {
                 for (x in 1 until grid[0].size - 1) {
-                    if (grid[y][x] in listOf(1, 2) && getRoadNeighbors(grid, x, y).size == 1) {
+                    if (grid[y][x] in listOf(CORE_CELL_CODE, ROAD_CELL_CODE) && getRoadNeighbors(
+                            grid,
+                            x,
+                            y
+                        ).size == 1
+                    ) {
                         deadEnds.add(x to y)
                     }
                 }
@@ -151,7 +189,11 @@ class GameMap private constructor(
             for ((dx, dy) in directions) {
                 val nx = x + dx
                 val ny = y + dy
-                if (ny in grid.indices && nx in grid[ny].indices && grid[ny][nx] in listOf(1, 2)) {
+                if (ny in grid.indices && nx in grid[ny].indices && grid[ny][nx] in listOf(
+                        CORE_CELL_CODE,
+                        ROAD_CELL_CODE
+                    )
+                ) {
                     neighbors.add(nx to ny)
                 }
             }
@@ -160,19 +202,14 @@ class GameMap private constructor(
 
         private fun createWaterCellsInternal(
             grid: Array<IntArray>,
-            startPosition: Vector2D,
             waterProbability: Float
         ) {
-            val waterRoomCode = 300
-
             for (y in 1 until grid.size - 1) {
                 for (x in 1 until grid[y].size - 1) {
-                    if (grid[y][x] / 100 == 2 &&
-                        !(x == startPosition.x.toInt() && y == startPosition.y.toInt())
-                    ) {
-
-                        if (Random.nextFloat() < waterProbability) {
-                            grid[y][x] = waterRoomCode
+                    if (Random.nextFloat() < waterProbability) {
+                        when (grid[y][x]) {
+                            CORE_CELL_CODE -> grid[y][x] = WATER_CORE_CODE
+                            ROAD_CELL_CODE -> grid[y][x] = WATER_ROAD_CODE
                         }
                     }
                 }
@@ -180,69 +217,259 @@ class GameMap private constructor(
         }
 
         private fun determinationCellTypesInternal(grid: Array<IntArray>) {
-            val width = grid[0].size
             val height = grid.size
+            val width = grid[0].size
 
-            for (y in 1 until height - 1) {
-                for (x in 1 until width - 1) {
-                    var index = 0
-                    val currentCellType = grid[y][x]
+            val newGrid = Array(height) { IntArray(width) }
 
-                    val top = grid[y - 1][x]
-                    val bottom = grid[y + 1][x]
-                    val left = grid[y][x - 1]
-                    val right = grid[y][x + 1]
+            for (y in 0 until height) {
+                for (x in 0 until width) {
+                    val cellValue = grid[y][x]
 
-                    if (currentCellType == 1) {
-                        if (top == 0 && bottom == 0 && left != 0 && right != 0) index = 101
-                        else if (top != 0 && bottom != 0 && left == 0 && right == 0) index = 102
-                        else if (top != 0 && bottom == 0 && left == 0 && right != 0) index = 103
-                        else if (top != 0 && bottom == 0 && left != 0 && right == 0) index = 104
-                        else if (top == 0 && bottom != 0 && left == 0 && right != 0) index = 105
-                        else if (top == 0 && bottom != 0 && left != 0 && right == 0) index = 106
-                        else index = 100
+                    when (cellValue) {
+                        EMPTY_CELL_CODE -> {
+                            newGrid[y][x] = 0
+                        }
 
-                    } else if (currentCellType == 2) {
-                        if (top == 0 && bottom == 0 && left != 0 && right != 0) index = 201
-                        else if (top != 0 && bottom != 0 && left == 0 && right == 0) index = 202
-                        else if (top != 0 && bottom == 0 && left == 0 && right != 0) index = 203
-                        else if (top != 0 && bottom == 0 && left != 0 && right == 0) index = 204
-                        else if (top == 0 && bottom != 0 && left == 0 && right != 0) index = 205
-                        else if (top == 0 && bottom != 0 && left != 0 && right == 0) index = 206
-                        else index = 200
-                    }
+                        CORE_CELL_CODE, ROAD_CELL_CODE, WATER_CORE_CODE, WATER_ROAD_CODE -> {
+                            val hasTop = y > 0 && grid[y - 1][x] != EMPTY_CELL_CODE
+                            val hasBottom = y < height - 1 && grid[y + 1][x] != EMPTY_CELL_CODE
+                            val hasLeft = x > 0 && grid[y][x - 1] != EMPTY_CELL_CODE
+                            val hasRight = x < width - 1 && grid[y][x + 1] != EMPTY_CELL_CODE
 
-                    if (index != 0) {
-                        grid[y][x] = index
-                    }
-                }
-            }
-        }
+                            var shapeCode = 0
 
-        private fun findStartCellInternal(grid: Array<IntArray>): Vector2D {
-            var startRoom = Vector2D(x = grid[0].size.toFloat(), y = grid.size.toFloat())
+                            when {
+                                hasTop && hasBottom && hasLeft && hasRight -> shapeCode = 11
+                                hasTop && hasBottom && hasLeft -> shapeCode = 10
+                                hasTop && hasLeft && hasRight -> shapeCode = 9
+                                hasBottom && hasLeft && hasRight -> shapeCode = 8
+                                hasTop && hasBottom && hasRight -> shapeCode = 7
+                                hasBottom && hasLeft -> shapeCode = 6
+                                hasBottom && hasRight -> shapeCode = 5
+                                hasTop && hasLeft -> shapeCode = 4
+                                hasTop && hasRight -> shapeCode = 3
+                                hasTop && hasBottom -> shapeCode = 2
+                                hasLeft && hasRight -> shapeCode = 1
+                            }
 
-            for (y: Int in 1 until grid.size - 1) {
-                for (x: Int in 1 until grid[y].size - 1) {
-                    if (grid[y][x] / 100 == 1) {
-                        if (x < startRoom.x || y < startRoom.y) {
-                            startRoom = Vector2D(x = x.toFloat(), y = y.toFloat())
+                            val baseCode = when (cellValue) {
+                                CORE_CELL_CODE -> 100
+                                WATER_CORE_CODE -> 200
+                                ROAD_CELL_CODE -> 300
+                                WATER_ROAD_CODE -> 400
+                                else -> 0
+                            }
+
+                            if (shapeCode > 0 && baseCode > 0) {
+                                newGrid[y][x] = baseCode + shapeCode
+                            } else {
+                                newGrid[y][x] = if (baseCode == 200 || baseCode == 400) 10 else 0
+                            }
+                        }
+
+                        else -> {
+                            newGrid[y][x] = cellValue
                         }
                     }
                 }
             }
-            return startRoom
+
+            for (y in 0 until height) {
+                System.arraycopy(newGrid[y], 0, grid[y], 0, width)
+            }
+        }
+
+        private fun findStartCellInternal(grid: Array<IntArray>): StartInfo {
+            val width: Int = grid[0].size
+            val height: Int = grid.size
+            val candidateCells = mutableListOf<Pair<Vector2D, StartDirection>>()
+
+            for (y in 1 until height - 1) {
+                for (x in 1 until width - 1) {
+                    val cellValue = grid[y][x]
+                    when (cellValue) {
+                        101, 301 -> {
+                            candidateCells.add(
+                                Pair(
+                                    Vector2D(x.toFloat(), y.toFloat()),
+                                    StartDirection.HORIZONTAL
+                                )
+                            )
+                        }
+
+                        102, 302 -> {
+                            candidateCells.add(
+                                Pair(
+                                    Vector2D(x.toFloat(), y.toFloat()),
+                                    StartDirection.VERTICAL
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (candidateCells.isNotEmpty()) {
+                val (chosenPosition, chosenDirection) = candidateCells.random()
+                if (chosenDirection == StartDirection.HORIZONTAL) {
+                    grid[chosenPosition.y.toInt()][chosenPosition.x.toInt()] = 112
+                } else {
+                    grid[chosenPosition.y.toInt()][chosenPosition.x.toInt()] = 113
+                }
+                return StartInfo(chosenPosition, chosenDirection)
+            }
+
+            println("Warning: Suitable start cell (horizontal/vertical road) not found. Using center position.")
+            return StartInfo(Vector2D(width / 2f, height / 2f), StartDirection.HORIZONTAL)
+        }
+
+
+        private fun generateRouteFromStart(grid: Array<IntArray>, startPos: Vector2D): List<Vector2D> {
+            val height = grid.size
+            val width = grid[0].size
+            val route = mutableListOf<Vector2D>()
+
+            val visited = Array(height) { BooleanArray(width) { false } }
+
+            val addedCheckpoints = mutableSetOf<Pair<Int, Int>>()
+
+            val startX = startPos.x.toInt()
+            val startY = startPos.y.toInt()
+
+            if (grid[startY][startX] in 100..299) {
+                val posPair = Pair(startX, startY)
+                if (!addedCheckpoints.contains(posPair)) {
+                    route.add(Vector2D(startX.toFloat(), startY.toFloat()))
+                    addedCheckpoints.add(posPair)
+                }
+            }
+            visited[startY][startX] = true
+
+            val directions = listOf(
+                Pair(0, -1),
+                Pair(1, 0),
+                Pair(0, 1),
+                Pair(-1, 0)
+            )
+
+            dfsExplore(
+                grid = grid,
+                visited = visited,
+                addedCheckpoints = addedCheckpoints,
+                currentX = startX,
+                currentY = startY,
+                route = route,
+                directions = directions,
+                width = width,
+                height = height
+            )
+
+            if (route.isEmpty()) {
+                println("Warning: Generated route is empty after DFS.")
+                if (grid[startY][startX] in 100..299) {
+                    val posPair = Pair(startX, startY)
+                    if (!addedCheckpoints.contains(posPair)) {
+                        route.add(Vector2D(startX.toFloat(), startY.toFloat()))
+                        addedCheckpoints.add(posPair)
+                    }
+                }
+            } else if (route.size == 1) {
+                println("Warning: Generated route contains only one checkpoint after DFS.")
+            }
+
+            val finishPos = Vector2D(startX.toFloat(), startY.toFloat())
+            if (route.isEmpty() || route.lastOrNull() != finishPos) {
+                route.add(finishPos)
+            }
+
+            return route
+        }
+
+        private fun dfsExplore(
+            grid: Array<IntArray>,
+            visited: Array<BooleanArray>,
+            addedCheckpoints: MutableSet<Pair<Int, Int>>,
+            currentX: Int,
+            currentY: Int,
+            route: MutableList<Vector2D>,
+            directions: List<Pair<Int, Int>>,
+            width: Int,
+            height: Int
+        ) {
+            for ((dx, dy) in directions) {
+                val nextX = currentX + dx
+                val nextY = currentY + dy
+
+                if (nextX in 0 until width && nextY in 0 until height) {
+                    val nextCellCode = grid[nextY][nextX]
+
+                    if (nextCellCode in 100..499) {
+                        if (nextCellCode in 100..299) {
+                            val posPair = Pair(nextX, nextY)
+                            if (!addedCheckpoints.contains(posPair)) {
+                                route.add(Vector2D(nextX.toFloat(), nextY.toFloat()))
+                                addedCheckpoints.add(posPair)
+                                // println("Added checkpoint at ($nextX, $nextY) with code $nextCellCode")
+                            } else {
+                                // println("Skipped duplicate checkpoint at ($nextX, $nextY)")
+                            }
+                        }
+
+                        if (!visited[nextY][nextX]) {
+                            visited[nextY][nextX] = true
+                            dfsExplore(
+                                grid,
+                                visited,
+                                addedCheckpoints,
+                                nextX,
+                                nextY,
+                                route,
+                                directions,
+                                width,
+                                height
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 
     val size: Int get() = height
 
-    fun getTerrainAt(x: Int, y: Int): TerrainType {
+    fun getTerrainName(x: Int, y: Int): String {
+        if (y !in grid.indices || x !in grid[y].indices) {
+            println("Warning: Attempted to get terrain name for out-of-bounds cell ($x, $y). Returning terrain_0.")
+            return "terrain_${EMPTY_CELL_CODE}"
+        }
+        return "terrain_" + grid[y][x].toString().padStart(3, '0')
+    }
+    fun getTerrainType(x: Int, y: Int): String {
         return when (grid[y][x] / 100) {
-            1 -> TerrainType.ROAD
-            2 -> TerrainType.ROAD
-            3 -> TerrainType.WATER
-            else -> TerrainType.GRASS
+            1 -> "ROAD"
+            2 -> "ABYSS"
+            3 -> "ROAD"
+            4 -> "ABYSS"
+            else -> "GRASS"
+        }
+    }
+
+    private fun getTerrainAt(x: Int, y: Int): TerrainType {
+        if (y !in grid.indices || x !in grid[y].indices) {
+            println("Warning: Attempted to get terrain at out-of-bounds cell ($x, $y). Returning ABYSS.")
+            return TerrainType.ABYSS
+        }
+
+        val cellValue = grid[y][x]
+        return when (cellValue) {
+            0 -> TerrainType.GRASS
+            10 -> TerrainType.WATER
+            in 100..199 -> TerrainType.ROAD
+            in 200..299 -> TerrainType.WATER
+            in 300..399 -> TerrainType.ROAD
+            in 400..499 -> TerrainType.WATER
+            else -> TerrainType.ABYSS
         }
     }
 
