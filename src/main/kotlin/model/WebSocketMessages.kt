@@ -4,6 +4,7 @@ import domain.GameMap
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import mobility.domain.Vector2D
+import javax.swing.text.Position
 
 // Enums remain the same
 enum class ClientMessageType {
@@ -164,7 +165,7 @@ data class StarterPack(
     val mapGrid: Array<IntArray>,
     val mapWidth: Int,
     val mapHeight: Int,
-    val startPosition: Vector2D,
+    val initialPlayerStates: List<Vector2D>,
     val startDirection: GameMap.StartDirection,
     val route: List<Vector2D>,
 ) {
@@ -177,7 +178,7 @@ data class StarterPack(
         if (mapWidth != other.mapWidth) return false
         if (mapHeight != other.mapHeight) return false
         if (!mapGrid.contentDeepEquals(other.mapGrid)) return false
-        if (startPosition != other.startPosition) return false
+        if (initialPlayerStates != other.initialPlayerStates) return false
         if (startDirection != other.startDirection) return false
         if (route != other.route) return false
 
@@ -188,7 +189,7 @@ data class StarterPack(
         var result = mapWidth.hashCode()
         result = 31 * result + mapHeight.hashCode()
         result = 31 * result + mapGrid.contentDeepHashCode()
-        result = 31 * result + startPosition.hashCode()
+        result = 31 * result + initialPlayerStates.hashCode()
         result = 31 * result + startDirection.hashCode()
         result = 31 * result + route.hashCode()
         return result

@@ -62,6 +62,8 @@ class GameRoom(
             GameMap.StartDirection.VERTICAL -> Car.DIRECTION_UP
         }
 
+        val initialPlayerStates = mutableListOf<Vector2D>()
+
         players.forEachIndexed { index, player ->
             val startPositionOffset = Vector2D(index * 1f, 0f)
             val basePosition = Vector2D(map.startCellPos.x + 0.2f, map.startCellPos.y + 0.6f)
@@ -76,13 +78,16 @@ class GameRoom(
                 direction = initialDirection,
                 visualDirection = initialDirection
             )
+
+            initialPlayerStates.add(finalPosition)
+            logger.info(initialPlayerStates.toString())
         }
 
         return StarterPack(
             mapGrid = map.grid,
             mapWidth = map.width,
             mapHeight = map.height,
-            startPosition = Vector2D(map.startCellPos.x, map.startCellPos.y),
+            initialPlayerStates = initialPlayerStates.toList(),
             startDirection = map.startDirection,
             route = map.route
         )
