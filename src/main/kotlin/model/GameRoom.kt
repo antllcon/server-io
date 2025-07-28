@@ -65,15 +65,9 @@ class GameRoom(
 
         // TODO: подкорректировать
         players.forEachIndexed { index, player ->
-            val spawnOffset = when (index) {
-                0 -> Vector2D(0f, 0.5f)
-                1 -> Vector2D(0.5f, 0f)
-                2 -> Vector2D(0f, 0.5f)
-                3 -> Vector2D(0.5f, 0.5f)
-                else -> Vector2D(index * 0.2f, 0f)
-            }
+            val startPositionOffset = Vector2D(index * 1f, 0f)
             val basePosition = Vector2D(map.startCellPos.x + 0.2f, map.startCellPos.y + 0.6f)
-            val finalPosition = Vector2D(basePosition.x + spawnOffset.x, basePosition.y + spawnOffset.y)
+            val finalPosition = Vector2D(basePosition.x + startPositionOffset.x, basePosition.y + startPositionOffset.y)
 
             logger.info(finalPosition.toString())
 
