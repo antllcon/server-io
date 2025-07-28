@@ -124,7 +124,7 @@ class GameRoom(
                 // внутри игровая логика
                 // + обработка коллизий в будущем
                 processPlayerInputs(deltaTime)
-//                movePlayers(deltaTime)
+                movePlayers(deltaTime)
                 sendGameStateUpdate(handler)
 
                 delay(serverTickRateMs)
