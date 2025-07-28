@@ -164,7 +164,7 @@ class GameRoom(
 
     private suspend fun sendGameStateUpdate(handler: GameWebSocketHandler) {
         val playerStates: List<PlayerStateDto> = players.map { player ->
-            val car = player.car ?: run {
+            player.car ?: run {
                 PlayerStateDto(
                     id = player.car!!.playerName,
                     posX = 0f,
