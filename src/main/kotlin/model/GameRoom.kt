@@ -143,6 +143,8 @@ class GameRoom(
                     speedModifier = speedModifier
                 )
 
+                logger.info(player.car!!.playerName, player.car!!.position.x, player.car!!.position.y)
+
                 // TODO: Здесь также можно обрабатывать ringsCrossed,
                 // например, обновлять счетчик колец для игрока на сервере.
                 // checkpointManager?.recordCheckpoint(player.car.id, input.ringsCrossed) // Пример
