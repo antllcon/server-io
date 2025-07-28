@@ -137,13 +137,13 @@ class GameRoom(
             playerInputs[player.id]?.let { input ->
                 val speedModifier = gameMap?.getSpeedModifier(player.car!!.position) ?: 1f
 
-                logger.info("${input.visualDirection}")
-
                 player.car = player.car!!.update(
                     elapsedTime = deltaTime,
                     directionAngle = input.visualDirection,
                     speedModifier = speedModifier
                 )
+
+                logger.info(player.car!!.speed.toString())
 
                 // TODO: Здесь также можно обрабатывать ringsCrossed,
                 // например, обновлять счетчик колец для игрока на сервере.
