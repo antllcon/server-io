@@ -166,7 +166,7 @@ class GameRoom(
         val playerStates: List<PlayerStateDto> = players.map { player ->
             val car = player.car ?: run {
                 PlayerStateDto(
-                    id = player.id,
+                    id = player.car!!.playerName,
                     posX = 0f,
                     posY = 0f,
                     visualDirection = 0f,
@@ -177,7 +177,7 @@ class GameRoom(
 
             // TODO: хз почему car не видно
             PlayerStateDto(
-                id = player.car!!.id,
+                id = player.car!!.playerName,
                 posX = player.car!!.position.x,
                 posY = player.car!!.position.y,
                 visualDirection = player.car!!.visualDirection,
