@@ -98,8 +98,6 @@ data class Car(
         val maxMove = MAP_SIZE * 0.5f
         val actualMove = moveDistance.coerceIn(-maxMove, maxMove)
 
-        logger.info(actualMove.toString())
-
         val halfCarLength = LENGTH / 2
 
         val newPosition = Vector2D(

@@ -136,10 +136,15 @@ class GameRoom(
         players.forEach { player ->
             playerInputs[player.id]?.let { input ->
                 val speedModifier = gameMap?.getSpeedModifier(player.car!!.position) ?: 1f
+                val newDirection = if (input.visualDirection == 0f) {
+                    null
+                } else {
+                    input.visualDirection
+                }
 
                 player.car = player.car!!.update(
                     elapsedTime = deltaTime,
-                    directionAngle = input.visualDirection,
+                    directionAngle = newDirection,
                     speedModifier = speedModifier
                 )
 
