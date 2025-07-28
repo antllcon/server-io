@@ -124,7 +124,7 @@ class GameRoom(
                 // внутри игровая логика
                 // + обработка коллизий в будущем
                 processPlayerInputs(deltaTime)
-                movePlayers(deltaTime)
+//                movePlayers(deltaTime)
                 sendGameStateUpdate(handler)
 
                 delay(serverTickRateMs)
@@ -147,8 +147,6 @@ class GameRoom(
                     directionAngle = newDirection,
                     speedModifier = speedModifier
                 )
-
-                logger.info(player.car!!.speed.toString())
 
                 // TODO: Здесь также можно обрабатывать ringsCrossed,
                 // например, обновлять счетчик колец для игрока на сервере.
