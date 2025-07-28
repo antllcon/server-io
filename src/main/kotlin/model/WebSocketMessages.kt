@@ -88,7 +88,7 @@ data class PlayerStateDto(
 
 @Serializable
 @SerialName("PLAYER_INPUT")
-data class PlayerInputRequest( val visualDirection: Float, val elapsedTime: Float, val ringsCrossed: Int) : ClientMessage {
+data class PlayerInputRequest(val visualDirection: Float, val elapsedTime: Float, val ringsCrossed: Int) : ClientMessage {
     override val type: ClientMessageType get() = ClientMessageType.PLAYER_INPUT
 }
 
