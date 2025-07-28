@@ -123,7 +123,7 @@ class GameRoom(
 
                 // внутри игровая логика
                 // + обработка коллизий в будущем
-                processPlayerInputs()
+                processPlayerInputs(deltaTime)
                 movePlayers(deltaTime)
                 sendGameStateUpdate(handler)
 
@@ -132,12 +132,15 @@ class GameRoom(
         }
     }
 
-    private fun processPlayerInputs() {
+    private fun processPlayerInputs(deltaTime: Float) {
         players.forEach { player ->
             playerInputs[player.id]?.let { input ->
                 val speedModifier = gameMap?.getSpeedModifier(player.car!!.position) ?: 1f
 
-                player.car = player.car!!.processInputs(
+                logger.info("${input.visualDirection}")
+
+                player.car = player.car!!.update(
+                    elapsedTime = deltaTime,
                     directionAngle = input.visualDirection,
                     speedModifier = speedModifier
                 )
@@ -154,7 +157,9 @@ class GameRoom(
         players.forEach { player ->
             val speedModifier = gameMap?.getSpeedModifier(player.car!!.position) ?: 1f
             player.car = player.car!!.update(
-                elapsedTime = deltaTime
+                elapsedTime = deltaTime,
+                directionAngle = null,
+                speedModifier = speedModifier
             )
         }
     }
