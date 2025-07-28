@@ -37,14 +37,20 @@ data class Car(
         const val DIRECTION_UP = (3 * PI / 2).toFloat()
     }
 
-    fun update(elapsedTime: Float, directionAngle: Float?, speedModifier: Float): Car {
+    fun update(elapsedTime: Float): Car {
         return copy(
-            direction = directionAngle ?: this.direction,
             position = updatePosition(elapsedTime),
-            speed = updateSpeed(directionAngle),
+            speed = updateSpeed(this.direction),
             speedModifier = setSpeedModifier(speedModifier),
             visualDirection = updateVisualDirection(),
             currentSprite = updateCurrentSprite()
+        )
+    }
+
+    fun processInputs(directionAngle: Float?, speedModifier: Float): Car {
+        return copy(
+            direction = directionAngle ?: this.direction,
+            speedModifier = speedModifier
         )
     }
 
