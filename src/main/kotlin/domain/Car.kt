@@ -1,9 +1,11 @@
 package domain
 
 import mobility.domain.Vector2D
+import org.slf4j.LoggerFactory
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.log
 import kotlin.math.sin
 
 data class Car(
@@ -20,6 +22,8 @@ data class Car(
     val currentSprite: Int = 1,
     var distanceBeforeSpriteChange: Float = DEFAULT_SPRITE_CHANGE_DISTANCE
 ) {
+    private val logger = LoggerFactory.getLogger(Car::class.java)
+
     companion object {
         const val MIN_SPEED = 0f
         const val MAX_SPEED = 2f
@@ -93,6 +97,8 @@ data class Car(
         val moveDistance = speed * deltaTime * speedModifier
         val maxMove = MAP_SIZE * 0.5f
         val actualMove = moveDistance.coerceIn(-maxMove, maxMove)
+
+        logger.info(actualMove.toString())
 
         val halfCarLength = LENGTH / 2
 
