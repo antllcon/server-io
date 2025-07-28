@@ -82,7 +82,8 @@ data class PlayerStateDto(
     val posY: Float,
     val visualDirection: Float,
     val speed: Float,
-    val isFinished: Boolean
+    val isFinished: Boolean,
+//    val currentSprite: Int
 )
 
 @Serializable

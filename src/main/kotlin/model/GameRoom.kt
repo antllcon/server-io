@@ -35,14 +35,13 @@ class GameRoom(
     }
 
     private val logger = LoggerFactory.getLogger(GameRoom::class.java)
-
-    val playerInputs = ConcurrentHashMap<String, PlayerInputRequest>()
     private var gameLoopJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-    private val serverTickRate = 50L
-
+    private val serverTickRateMs = 16L
+    private val serverTickRateSeconds = serverTickRateMs / 1000f
     private var gameMap: GameMap? = null
     private var checkpointManager: CheckpointManager? = null
+    val playerInputs = ConcurrentHashMap<String, PlayerInputRequest>()
 
     fun isFull(): Boolean = players.size >= maxPlayers
 
@@ -64,12 +63,19 @@ class GameRoom(
 
         val initialPlayerStates = mutableListOf<Vector2D>()
 
+        // TODO: подкорректировать
         players.forEachIndexed { index, player ->
-            val startPositionOffset = Vector2D(index * 1f, 0f)
+            val spawnOffset = when (index) {
+                0 -> Vector2D(0f, 0.5f)
+                1 -> Vector2D(0.5f, 0f)
+                2 -> Vector2D(0f, 0.5f)
+                3 -> Vector2D(0.5f, 0.5f)
+                else -> Vector2D(index * 0.2f, 0f)
+            }
             val basePosition = Vector2D(map.startCellPos.x + 0.2f, map.startCellPos.y + 0.6f)
-            val finalPosition = Vector2D(basePosition.x + startPositionOffset.x, basePosition.y + startPositionOffset.y)
+            val finalPosition = Vector2D(basePosition.x + spawnOffset.x, basePosition.y + spawnOffset.y)
 
-             logger.info(finalPosition.toString())
+            logger.info(finalPosition.toString())
 
             player.car = Car(
                 id = player.id,
@@ -96,11 +102,12 @@ class GameRoom(
     fun startCountdown(handler: GameWebSocketHandler) {
         scope.launch {
             while (secondsBeforeStart > 0) {
-                secondsBeforeStart -= serverTickRate / 1000f
+                secondsBeforeStart -= serverTickRateSeconds
+                if (secondsBeforeStart < 0) secondsBeforeStart = 0f
 
                 handler.broadcastToRoom(id, GameCountdownUpdateResponse(secondsBeforeStart))
 
-                delay(serverTickRate)
+                delay(serverTickRateMs)
             }
         }
 
@@ -110,88 +117,84 @@ class GameRoom(
 
     private fun startGameLoop(handler: GameWebSocketHandler) {
         if (state != GameRoomState.ONGOING || gameLoopJob?.isActive == true) return
-        val playersFinished = 0
+//        val playersFinished = 0
 
         gameLoopJob = scope.launch {
+            var lastTime = System.currentTimeMillis()
+
             while (isActive) {
-                val deltaTime = serverTickRate / 100f
+                val currentTime = System.currentTimeMillis()
+                val deltaTime = (currentTime - lastTime) / 1000f
+                lastTime = currentTime
 
-//                // 1. Обновляем физику
-//                players.forEach { player ->
-//                    if (player.ringsCrossed != RINGS_TO_CROSS_TO_FINISH) {
-//                        val input = playerInputs[player.id] ?: PlayerInputRequest(false, 0f, serverTickRate.toFloat(), player.ringsCrossed)
-//
-//                        logger.info("Player ${player.id} - Input: isAccelerating=${input.isAccelerating}, turnDirection=${input.turnDirection}")
-//                        logger.info("Player ${player.id} - Car before update: Pos=${player.car.position}, Dir=${player.car.direction}, Speed=${player.car.speed}, Turning=${player.car.direction}")
-//
-//                        if (input.isAccelerating) player.car.accelerate(deltaTime)
-//                        else player.car.decelerate(deltaTime)
-//
-//                        //FIXME: it's possible that it may cause some errors during collisions
-//                        //FIXME: because the collision itself may be handled twice
-//                        for (otherPlayer in players) {
-//                            if (otherPlayer != player) {
-//                                val collisionResult = detectCollision(player.car, otherPlayer.car)
-//                                if (collisionResult.isColliding) {
-//                                    handleCollision(player.car, otherPlayer.car, collisionResult)
-//                                }
-//                            }
-//                        }
-//
-//                        if (input.turnDirection != 0f) {
-//                            player.car.startTurn(input.turnDirection)
-//                        } else {
-//                            player.car.stopTurn()
-//                        }
-//
-//                        val cellX = player.car.position.x.toInt().coerceIn(0, gameMap.size - 1)
-//                        val cellY = player.car.position.y.toInt().coerceIn(0, gameMap.size - 1)
-//                        player.car.setSpeedModifier(gameMap.getSpeedModifier(Vector2D(cellX.toFloat(), cellY.toFloat())))
-//
-//                        player.car.update(deltaTime)
-//                        player.ringsCrossed = input.ringsCrossed
-//                        player.secondsAfterStart += deltaTime
-//
-//                        if (player.ringsCrossed == RINGS_TO_CROSS_TO_FINISH) {
-//                            playersFinished += 1
-//                        }
-//                    }
-////                    logger.info("Player ${player.id} - Car after update: Pos=${player.car.position}, Dir=${player.car.direction}, Speed=${player.car.speed}, Turning=${player.car.direction}")
-//                }
+                // внутри игровая логика
+                // + обработка коллизий в будущем
+                processPlayerInputs(deltaTime)
+                movePlayers(deltaTime)
+                sendGameStateUpdate(handler)
 
-//                if (playersFinished == players.size) {
-//                    val finalInfo: MutableMap<String, Long> = mutableMapOf()
-//
-//                    players.forEach { player ->
-//                        finalInfo[player.name] = player.secondsAfterStart.toLong()
-//                    }
-//
-//                    handler.broadcastToRoom(id, GameStopResponse(finalInfo))
-//                    stopGameLoop()
-//                }
-//
-//                // 2. Собираем состояние
-//                val playerStates = players.map { p ->
-//                    val dto = PlayerStateDto(
-//                        id = p.id,
-//                        posX = p.car.position.x,
-//                        posY = p.car.position.y,
-//                        visualDirection = p.car.visualDirection,
-//                        speed = p.car.speed,
-////                        isAccelerating = p.car.isAccelerating,
-//                        isFinished = p.ringsCrossed == RINGS_TO_CROSS_TO_FINISH
-//                    )
-//                    logger.info("Server: Sending PlayerStateDto for ${p.id}: PosX=${dto.posX}, PosY=${dto.posY}, Direction=${dto.visualDirection}")
-//                    dto
-//                }
-
-                // 3. Рассылаем всем в комнате
-//                handler.broadcastToRoom(id, GameStateUpdateResponse(playerStates))
-
-                delay(serverTickRate)
+                delay(serverTickRateMs)
             }
         }
     }
+
+    private fun processPlayerInputs(deltaTime: Float) {
+        players.forEach { player ->
+            playerInputs[player.id]?.let { input ->
+                val speedModifier = gameMap?.getSpeedModifier(player.car!!.position) ?: 1f
+
+                player.car = player.car!!.update(
+                    elapsedTime = deltaTime,
+                    directionAngle = input.visualDirection,
+                    speedModifier = speedModifier
+                )
+
+                // TODO: Здесь также можно обрабатывать ringsCrossed,
+                // например, обновлять счетчик колец для игрока на сервере.
+                // checkpointManager?.recordCheckpoint(player.car.id, input.ringsCrossed) // Пример
+            }
+        }
+        // playerInputs.clear()
+    }
+
+    private fun movePlayers(deltaTime: Float) {
+        players.forEach { player ->
+            val speedModifier = gameMap?.getSpeedModifier(player.car!!.position) ?: 1f
+            player.car = player.car!!.update(
+                elapsedTime = deltaTime,
+                directionAngle = null,
+                speedModifier = speedModifier
+            )
+        }
+    }
+
+    private suspend fun sendGameStateUpdate(handler: GameWebSocketHandler) {
+        val playerStates: List<PlayerStateDto> = players.map { player ->
+            val car = player.car ?: run {
+                PlayerStateDto(
+                    id = player.id,
+                    posX = 0f,
+                    posY = 0f,
+                    visualDirection = 0f,
+                    speed = 0f,
+                    isFinished = false
+                )
+            }
+
+            // TODO: хз почему car не видно
+            PlayerStateDto(
+                id = player.car!!.id,
+                posX = player.car!!.position.x,
+                posY = player.car!!.position.y,
+                visualDirection = player.car!!.visualDirection,
+                speed = player.car!!.speed,
+                isFinished = false,
+            )
+        }.toList()
+
+        handler.broadcastToRoom(id, GameStateUpdateResponse(playerStates))
+    }
+
 
     fun stopGameLoop() {
         state = GameRoomState.ENDED
