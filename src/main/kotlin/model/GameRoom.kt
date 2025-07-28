@@ -143,7 +143,7 @@ class GameRoom(
                     speedModifier = speedModifier
                 )
 
-                logger.info(player.car!!.playerName, player.car!!.position.x, player.car!!.position.y)
+                logger.info("${player.car!!.playerName} ${player.car!!.position.toString()}")
 
                 // TODO: Здесь также можно обрабатывать ringsCrossed,
                 // например, обновлять счетчик колец для игрока на сервере.
