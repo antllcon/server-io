@@ -52,11 +52,11 @@ class GameRoom(
     fun initGameAndCreateStarterPack(): StarterPack? {
         if (state != GameRoomState.LOBBY) return null
 
-        val map = GameMap.generateDungeonMap()
+        val map: GameMap = GameMap.generateDungeonMap()
         this.gameMap = map
         this.checkpointManager = CheckpointManager(map.route)
 
-        val initialDirection = when (map.startDirection) {
+        val initialDirection: Float = when (map.startDirection) {
             GameMap.StartDirection.HORIZONTAL -> Car.DIRECTION_RIGHT
             GameMap.StartDirection.VERTICAL -> Car.DIRECTION_UP
         }
@@ -124,7 +124,7 @@ class GameRoom(
                 // внутри игровая логика
                 // + обработка коллизий в будущем
                 processPlayerInputs(deltaTime)
-                movePlayers(deltaTime)
+//                movePlayers(deltaTime)
                 sendGameStateUpdate(handler)
 
                 delay(serverTickRateMs)
@@ -135,11 +135,11 @@ class GameRoom(
     private fun processPlayerInputs(deltaTime: Float) {
         players.forEach { player ->
             playerInputs[player.id]?.let { input ->
-                val speedModifier = gameMap?.getSpeedModifier(player.car!!.position) ?: 1f
+                val speedModifier: Float = gameMap?.getSpeedModifier(player.car!!.position) ?: 1f
 
                 player.car = player.car!!.update(
+                    directionAngle = input.directionAngle,
                     elapsedTime = deltaTime,
-                    directionAngle = input.visualDirection,
                     speedModifier = speedModifier
                 )
 
@@ -151,31 +151,19 @@ class GameRoom(
         // playerInputs.clear()
     }
 
-    private fun movePlayers(deltaTime: Float) {
-        players.forEach { player ->
-            val speedModifier = gameMap?.getSpeedModifier(player.car!!.position) ?: 1f
-            player.car = player.car!!.update(
-                elapsedTime = deltaTime,
-                directionAngle = null,
-                speedModifier = speedModifier
-            )
-        }
-    }
+//    private fun movePlayers(deltaTime: Float) {
+//        players.forEach { player ->
+//            val speedModifier = gameMap?.getSpeedModifier(player.car!!.position) ?: 1f
+//            player.car = player.car!!.update(
+//                directionAngle = null,
+//                elapsedTime = deltaTime,
+//                speedModifier = speedModifier
+//            )
+//        }
+//    }
 
     private suspend fun sendGameStateUpdate(handler: GameWebSocketHandler) {
-        val playerStates: List<PlayerStateDto> = players.map { player ->
-            val car = player.car ?: run {
-                PlayerStateDto(
-                    id = player.id,
-                    posX = 0f,
-                    posY = 0f,
-                    visualDirection = 0f,
-                    speed = 0f,
-                    isFinished = false
-                )
-            }
-
-            // TODO: хз почему car не видно
+        val playerStates: Array<PlayerStateDto> = players.map { player ->
             PlayerStateDto(
                 id = player.car!!.id,
                 posX = player.car!!.position.x,
@@ -184,7 +172,7 @@ class GameRoom(
                 speed = player.car!!.speed,
                 isFinished = false,
             )
-        }.toList()
+        }.toList().toTypedArray()
 
         handler.broadcastToRoom(id, GameStateUpdateResponse(playerStates))
     }
