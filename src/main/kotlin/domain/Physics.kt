@@ -1,4 +1,4 @@
-//package mobility.domain
+package mobility.domain//package mobility.domain
 //
 //import domain.Car
 //import kotlin.math.cos
