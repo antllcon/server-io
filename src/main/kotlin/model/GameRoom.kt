@@ -37,7 +37,7 @@ class GameRoom(
     private val logger = LoggerFactory.getLogger(GameRoom::class.java)
     private var gameLoopJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-    private val serverTickRateMs = 50L
+    private val serverTickRateMs = 16L
     private val serverTickRateSeconds = serverTickRateMs / 1000f
     private var gameMap: GameMap? = null
     private var checkpointManager: CheckpointManager? = null
