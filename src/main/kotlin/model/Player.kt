@@ -10,6 +10,6 @@ data class Player(
     val session: WebSocketSession,
     var roomId: String? = null,
     var car: Car? = null,
-    var ringsCrossed: Int = 0,
+    var isFinished: Boolean = false,
     var secondsAfterStart: Float = 0f
 )

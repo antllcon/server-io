@@ -46,6 +46,7 @@ class GameWebSocketHandler {
                 is LeaveRoomRequest -> handleLeaveRoom(session)
                 is PlayerActionRequest -> handlePlayerAction(session, message)
                 is PlayerInputRequest -> handlePlayerInput(session, message)
+                is PlayerFinishedRequest -> handlePlayerFinished(session, message)
 
             }
         } catch (e: Exception) {
@@ -252,6 +253,21 @@ class GameWebSocketHandler {
         val room = GameRoomManager.rooms[roomId] ?: return
 
         room.playerInputs[playerId] = request
+    }
+
+    private suspend fun handlePlayerFinished(session: WebSocketSession, request: PlayerFinishedRequest) {
+        val (player, roomId) = getAndValidatePlayerInRoomOrSendError(session, "PLAYER_FINISHED") ?: return
+        val room = GameRoomManager.rooms[roomId] ?: return
+
+        player.isFinished = true
+        val result: MutableMap<String, Float> = mutableMapOf()
+
+        for (player in room.players) {
+            if (!player.isFinished) return
+            result.put(player.name, player.secondsAfterStart)
+        }
+
+        broadcastToRoom(roomId, GameStopResponse(result))
     }
 
     private suspend fun getPlayerIdOrSendError(session: WebSocketSession, context: String): String? {

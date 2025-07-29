@@ -27,6 +27,7 @@ val AppJson = Json {
             subclass(StartGameRequest::class)
             subclass(PlayerActionRequest::class)
             subclass(PlayerInputRequest::class)
+            subclass(PlayerFinishedRequest::class)
         }
         polymorphic(ServerMessage::class) {
             subclass(PlayerConnectedResponse::class)

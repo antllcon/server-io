@@ -14,7 +14,8 @@ enum class ClientMessageType {
     LEAVE_ROOM,
     START_GAME,
     PLAYER_ACTION,
-    PLAYER_INPUT
+    PLAYER_INPUT,
+    PLAYER_FINISHED
 }
 
 enum class ServerMessageType {
@@ -90,6 +91,12 @@ data class PlayerStateDto(
 @SerialName("PLAYER_INPUT")
 data class PlayerInputRequest(val visualDirection: Float, val elapsedTime: Float, val ringsCrossed: Int) : ClientMessage {
     override val type: ClientMessageType get() = ClientMessageType.PLAYER_INPUT
+}
+
+@Serializable
+@SerialName("PLAYER_FINISH")
+data class PlayerFinishedRequest(val playerName: String): ClientMessage {
+    override val type: ClientMessageType get() = ClientMessageType.PLAYER_FINISHED
 }
 
 @Serializable
@@ -216,7 +223,7 @@ data class PlayerActionResponse(val name: String) : ServerMessage {
 
 @Serializable
 @SerialName("GAME_COUNTDOWN_UPDATE")
-data class GameCountdownUpdateResponse(val remainingTime: Float) : ServerMessage {
+data class GameCountdownUpdateResponse(val remainingTime: Int) : ServerMessage {
     override val type: ServerMessageType get() = ServerMessageType.GAME_COUNTDOWN_UPDATE
 }
 
@@ -228,6 +235,6 @@ data class GameStateUpdateResponse(val players: List<PlayerStateDto>) : ServerMe
 
 @Serializable
 @SerialName("GAME_STOP")
-data class GameStopResponse(val result: MutableMap<String, Long>) : ServerMessage {
+data class GameStopResponse(val result: MutableMap<String, Float>) : ServerMessage {
     override val type: ServerMessageType get() = ServerMessageType.GAME_STOP
 }

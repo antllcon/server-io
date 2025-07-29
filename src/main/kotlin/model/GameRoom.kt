@@ -10,6 +10,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import mobility.domain.Vector2D
 import mobility.service.GameWebSocketHandler
 import org.slf4j.LoggerFactory
@@ -27,7 +28,6 @@ class GameRoom(
     val name: String,
     val players: MutableList<Player> = mutableListOf(),
     var state: GameRoomState = GameRoomState.LOBBY,
-    var secondsBeforeStart: Float = 5f,
     private val maxPlayers: Int = 6,
 ) {
     companion object {
@@ -93,16 +93,12 @@ class GameRoom(
         )
     }
 
-    fun startCountdown(handler: GameWebSocketHandler) {
-        scope.launch {
-            while (secondsBeforeStart > 0) {
-                secondsBeforeStart -= serverTickRateSeconds
-                if (secondsBeforeStart < 0) secondsBeforeStart = 0f
-
-                handler.broadcastToRoom(id, GameCountdownUpdateResponse(secondsBeforeStart))
-
-                delay(serverTickRateMs)
-            }
+    suspend fun startCountdown(handler: GameWebSocketHandler) {
+        withContext(Dispatchers.IO) {
+           for (second in 0 until 5) {
+               handler.broadcastToRoom(id, GameCountdownUpdateResponse(5 - second))
+               delay(1000)
+           }
         }
 
         state = GameRoomState.ONGOING
@@ -124,10 +120,19 @@ class GameRoom(
                 // внутри игровая логика
                 // + обработка коллизий в будущем
                 processPlayerInputs(deltaTime)
+                updatePlayersTime(deltaTime)
 //                movePlayers(deltaTime)
                 sendGameStateUpdate(handler)
 
                 delay(serverTickRateMs)
+            }
+        }
+    }
+
+    private fun updatePlayersTime(elapsedTime: Float) {
+        for (player in players) {
+            if (!player.isFinished) {
+                player.secondsAfterStart += elapsedTime
             }
         }
     }
