@@ -132,7 +132,7 @@ class GameRoom(
     private fun updatePlayersTime(elapsedTime: Float) {
         for (player in players) {
             if (!player.isFinished) {
-                player.secondsAfterStart += elapsedTime.toLong()
+                player.secondsAfterStart += elapsedTime
             }
         }
     }
