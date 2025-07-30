@@ -19,7 +19,9 @@ data class Car(
     var visualDirection: Float = 0f,
     val speedModifier: Float = 1f,
     val currentSprite: Int = 1,
-    var distanceBeforeSpriteChange: Float = DEFAULT_SPRITE_CHANGE_DISTANCE
+    var distanceBeforeSpriteChange: Float = DEFAULT_SPRITE_CHANGE_DISTANCE,
+    val isStarting: Boolean = false,
+    var wasStopped: Boolean = true
 ) {
     private val logger = LoggerFactory.getLogger(Car::class.java)
 
@@ -41,13 +43,20 @@ data class Car(
     }
 
     fun update(elapsedTime: Float, directionAngle: Float?, speedModifier: Float): Car {
+        val newSpeed = updateSpeed(directionAngle)
+        val wasStoppedBefore = speed <= MIN_SPEED
+        val isMovingNow = newSpeed > MIN_SPEED
+        val starting = wasStoppedBefore && isMovingNow
+
         return copy(
             direction = directionAngle ?: this.direction,
             position = updatePosition(elapsedTime),
-            speed = updateSpeed(directionAngle),
+            speed = newSpeed,
             speedModifier = setSpeedModifier(speedModifier),
             visualDirection = updateVisualDirection(),
-            currentSprite = updateCurrentSprite()
+            currentSprite = updateCurrentSprite(),
+            isStarting = starting,
+            wasStopped = newSpeed <= MIN_SPEED
         )
     }
 
