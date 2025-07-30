@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
-import kotlin.math.log
 import kotlin.math.sin
 
 data class Car(
