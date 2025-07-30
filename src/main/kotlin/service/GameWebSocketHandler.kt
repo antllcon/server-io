@@ -256,7 +256,15 @@ class GameWebSocketHandler {
     }
 
     private suspend fun handlePlayerFinished(session: WebSocketSession, request: PlayerFinishedRequest) {
-        val (player, roomId) = getAndValidatePlayerInRoomOrSendError(session, "PLAYER_FINISHED") ?: return
+        val playerId = sessionToPlayerId[session] ?: run {
+            sendErrorToSession(session, ServerException(request.name, "Player is not init"))
+            return
+        }
+        val player = GameRoomManager.players[playerId] ?: run {
+            sendErrorToSession(session, ServerException(request.name, "Player with ID $playerId not found"))
+            return
+        }
+        val roomId = player.roomId ?: return
         val room = GameRoomManager.rooms[roomId] ?: return
 
         logger.info("${player.name} finished!")
