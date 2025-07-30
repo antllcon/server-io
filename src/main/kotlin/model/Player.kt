@@ -11,5 +11,5 @@ data class Player(
     var roomId: String? = null,
     var car: Car? = null,
     var isFinished: Boolean = false,
-    var secondsAfterStart: Float = 0f
+    var secondsAfterStart: Long = 0L
 )

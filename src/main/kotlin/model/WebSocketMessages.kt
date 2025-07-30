@@ -235,6 +235,6 @@ data class GameStateUpdateResponse(val players: List<PlayerStateDto>) : ServerMe
 
 @Serializable
 @SerialName("GAME_STOP")
-data class GameStopResponse(val result: MutableMap<String, Float>) : ServerMessage {
+data class GameStopResponse(val result: MutableMap<String, Long>) : ServerMessage {
     override val type: ServerMessageType get() = ServerMessageType.GAME_STOP
 }

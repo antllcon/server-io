@@ -270,7 +270,7 @@ class GameWebSocketHandler {
         logger.info("${player.name} finished!")
 
         player.isFinished = true
-        val result: MutableMap<String, Float> = mutableMapOf()
+        val result: MutableMap<String, Long> = mutableMapOf()
 
         for (player in room.players) {
             if (!player.isFinished) return
