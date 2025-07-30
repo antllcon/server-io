@@ -26,9 +26,9 @@ data class Car(
 
     companion object {
         const val MIN_SPEED = 0f
-        const val MAX_SPEED = 2f
-        const val ACCELERATION = 0.02f
-        const val DECELERATION = 0.2f
+        const val MAX_SPEED = 2.5f
+        const val ACCELERATION = 0.5f
+        const val DECELERATION = 0.4f
         const val LENGTH = 0.203f
         const val WIDTH = 0.30f
         const val MAP_SIZE = 13f
