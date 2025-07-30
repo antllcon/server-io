@@ -95,7 +95,7 @@ class GameRoom(
 
     suspend fun startCountdown(handler: GameWebSocketHandler) {
         withContext(Dispatchers.IO) {
-           for (second in 0 until 5) {
+           for (second in 0 until 6) {
                handler.broadcastToRoom(id, GameCountdownUpdateResponse(5 - second))
                delay(1000)
            }
