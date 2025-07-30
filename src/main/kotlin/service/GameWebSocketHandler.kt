@@ -259,7 +259,7 @@ class GameWebSocketHandler {
         val (player, roomId) = getAndValidatePlayerInRoomOrSendError(session, "PLAYER_FINISHED") ?: return
         val room = GameRoomManager.rooms[roomId] ?: return
 
-        logger.info("player.name finished!")
+        logger.info("${player.name} finished!")
 
         player.isFinished = true
         val result: MutableMap<String, Float> = mutableMapOf()
@@ -268,6 +268,8 @@ class GameWebSocketHandler {
             if (!player.isFinished) return
             result.put(player.name, player.secondsAfterStart)
         }
+
+        logger.info("Sending to room: $result")
 
         broadcastToRoom(roomId, GameStopResponse(result))
     }
