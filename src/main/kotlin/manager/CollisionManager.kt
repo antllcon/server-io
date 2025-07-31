@@ -15,7 +15,7 @@ object CollisionManager {
     private const val RESTITUTION = 1f // Коэффициент упругости (0 - нет отскока, 1 - идеальный отскок)
 
     fun checkAndResolveCollisions(players: List<Player>) {
-        val cars: List<Car> = players.map { it.car!! }
+        val cars: List<Car> = players.mapNotNull { if(it.isFinished) null else it.car!! }
 
         for (i: Int in cars.indices) {
             for (j: Int in (i + 1) until cars.size) {
