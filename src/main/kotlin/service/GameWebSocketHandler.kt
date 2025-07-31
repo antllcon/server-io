@@ -103,6 +103,17 @@ class GameWebSocketHandler {
 
         logger.info("Disconnect, ${player.name}")
         val roomId = player.roomId ?: return
+        val room = GameRoomManager.rooms[roomId] ?: return
+
+        val newPlayersList: MutableList<Player> = mutableListOf()
+
+        for (p in room.players) {
+            if (p.name != player.name) {
+                newPlayersList.plus(p)
+            }
+        }
+
+        room.players = newPlayersList
 
         broadcastToRoom(roomId, PlayerDisconnectedResponse(player.name))
         broadcastToRoom(roomId, PlayerConnectedResponse("", GameRoomManager.getPlayersNames(roomId)))
