@@ -5,7 +5,6 @@ import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
 
-
 data class CollisionResult(
     val areColliding: Boolean,
     val penetrationVector: Vector2D

@@ -12,7 +12,7 @@ import kotlin.math.sin
 
 object CollisionManager {
 
-    private const val RESTITUTION = 0.4f // Коэффициент упругости (0 - нет отскока, 1 - идеальный отскок)
+    private const val RESTITUTION = 1f // Коэффициент упругости (0 - нет отскока, 1 - идеальный отскок)
 
     fun checkAndResolveCollisions(players: List<Player>) {
         val cars: List<Car> = players.map { it.car!! }
@@ -23,7 +23,7 @@ object CollisionManager {
                 val car2: Car = cars[j]
 
                 val corners1: List<Vector2D> = getCarCorners(car1)
-                val corners2 : List<Vector2D> = getCarCorners(car2)
+                val corners2: List<Vector2D> = getCarCorners(car2)
 
                 val result: CollisionResult = detectCollision(corners1, corners2, car1.position, car2.position)
 
@@ -106,9 +106,9 @@ object CollisionManager {
 
         val corners = listOf(
             Vector2D(-halfL, -halfW),
-            Vector2D( halfL, -halfW),
-            Vector2D( halfL,  halfW),
-            Vector2D(-halfL,  halfW)
+            Vector2D(halfL, -halfW),
+            Vector2D(halfL, halfW),
+            Vector2D(-halfL, halfW)
         )
 
         return corners.map { c ->
