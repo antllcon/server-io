@@ -56,12 +56,6 @@ class GameRoom(
         val map = GameMap.generateDungeonMap()
         this.gameMap = map
         this.checkpointManager = CheckpointManager(map.route)
-
-        val initialDirection = when (map.startDirection) {
-            GameMap.StartDirection.HORIZONTAL -> Car.DIRECTION_RIGHT
-            GameMap.StartDirection.VERTICAL -> Car.DIRECTION_UP
-        }
-
         val initialPlayerStates = mutableListOf<Vector2D>()
 
         // TODO: подкорректировать
@@ -76,8 +70,8 @@ class GameRoom(
                 id = player.id,
                 playerName = player.name,
                 position = finalPosition,
-                direction = initialDirection,
-                visualDirection = initialDirection
+                direction = map.startAngle,
+                visualDirection = map.startAngle
             )
 
             initialPlayerStates.add(finalPosition)
@@ -89,7 +83,7 @@ class GameRoom(
             mapWidth = map.width,
             mapHeight = map.height,
             initialPlayerStates = initialPlayerStates.toList(),
-            startDirection = map.startDirection,
+            startAngle = map.startAngle,
             route = map.route
         )
     }
