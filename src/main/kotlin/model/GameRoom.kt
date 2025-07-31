@@ -165,17 +165,18 @@ class GameRoom(
                     id = player.car!!.playerName,
                     posX = 0f,
                     posY = 0f,
+                    direction = 0f,
                     visualDirection = 0f,
                     speed = 0f,
                     isFinished = false
                 )
             }
 
-            // TODO: хз почему car не видно
             PlayerStateDto(
                 id = player.car!!.playerName,
                 posX = player.car!!.position.x,
                 posY = player.car!!.position.y,
+                direction = player.car!!.direction,
                 visualDirection = player.car!!.visualDirection,
                 speed = player.car!!.speed,
                 isFinished = player.isFinished,

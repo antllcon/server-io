@@ -78,6 +78,7 @@ data class PlayerStateDto(
     val id: String,
     val posX: Float,
     val posY: Float,
+    val direction: Float,
     val visualDirection: Float,
     val speed: Float,
     val isFinished: Boolean,
