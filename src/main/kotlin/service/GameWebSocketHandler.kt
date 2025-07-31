@@ -115,7 +115,6 @@ class GameWebSocketHandler {
         }
 
         room.players = newPlayersList
-        logger.info(room.players.toString())
 
         broadcastToRoom(roomId, PlayerDisconnectedResponse(player.name))
         broadcastToRoom(roomId, PlayerConnectedResponse("", GameRoomManager.getPlayersNames(roomId)))
