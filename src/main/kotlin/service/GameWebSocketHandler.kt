@@ -81,9 +81,11 @@ class GameWebSocketHandler {
 
             val player = getAndValidateNewPlayerOrSendError(session, request.name) ?: return
 
-            if (request.name in GameRoomManager.rooms.keys) {
-                sendErrorToSession(session, ServerException(request.name, "Room ${request.name} already exist!"))
-                return
+            GameRoomManager.rooms.forEach { (key, _) ->
+                if (key == request.name) {
+                    sendErrorToSession(session, ServerException(request.name, "Room $key already exist!"))
+                    return
+                }
             }
 
             val newRoom = GameRoomManager.createRoom(request.name)
