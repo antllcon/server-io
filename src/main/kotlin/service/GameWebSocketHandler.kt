@@ -81,6 +81,10 @@ class GameWebSocketHandler {
 
             val player = getAndValidateNewPlayerOrSendError(session, request.name) ?: return
 
+            if (request.name in GameRoomManager.rooms) {
+                sendErrorToSession(session, ServerException(request.name, "Room ${request.name} already exist!"))
+            }
+
             val newRoom = GameRoomManager.createRoom(request.name)
             val isJoined = GameRoomManager.joinRoom(player.id, newRoom.id)
 
@@ -157,10 +161,11 @@ class GameWebSocketHandler {
                 return
             }
 
-            val isNameTaken = room.players.any { it.name.equals(request.name, ignoreCase = true) }
-            if (isNameTaken) {
-                sendErrorToSession(session, ServerException(request.name, "Name '${request.name}' is already taken in this room"))
-                return
+            room.players.forEach {
+                if (it.name == player.name) {
+                    sendErrorToSession(session, ServerException(request.name, "Name ${player.name} is already taken in this room!"))
+                    return
+                }
             }
 
             if (room.state == GameRoomState.ONGOING || room.state == GameRoomState.ENDED) {
