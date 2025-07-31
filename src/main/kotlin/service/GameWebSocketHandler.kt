@@ -104,7 +104,7 @@ class GameWebSocketHandler {
         logger.info("Disconnect, ${player.name}")
         val roomId = player.roomId ?: return
 
-        broadcastToRoom(roomId, PlayerDisconnectedResponse(playerId))
+        broadcastToRoom(roomId, PlayerDisconnectedResponse(player.name))
         broadcastToRoom(roomId, PlayerConnectedResponse("", GameRoomManager.getPlayersNames(roomId)))
 
         GameRoomManager.cleanupEmptyRoom(roomId)
