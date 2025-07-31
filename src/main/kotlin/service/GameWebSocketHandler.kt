@@ -110,7 +110,7 @@ class GameWebSocketHandler {
 
         for (p in room.players) {
             if (p.name != player.name) {
-                newPlayersList.plus(p)
+                newPlayersList.add(p)
             }
         }
 
