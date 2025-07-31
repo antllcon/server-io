@@ -90,7 +90,7 @@ class GameRoom(
             mapHeight = map.height,
             initialPlayerStates = initialPlayerStates.toList(),
             startDirection = map.startDirection,
-            route = map.route
+            route = map.route.take(1)
         )
     }
 
