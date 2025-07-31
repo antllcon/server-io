@@ -7,6 +7,7 @@ import mobility.manager.GameRoomManager
 import mobility.model.*
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.log
 
 class GameWebSocketHandler {
 
@@ -114,6 +115,7 @@ class GameWebSocketHandler {
         }
 
         room.players = newPlayersList
+        logger.info(room.players.toString())
 
         broadcastToRoom(roomId, PlayerDisconnectedResponse(player.name))
         broadcastToRoom(roomId, PlayerConnectedResponse("", GameRoomManager.getPlayersNames(roomId)))
