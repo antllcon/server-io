@@ -83,6 +83,7 @@ class GameWebSocketHandler {
 
             if (request.name in GameRoomManager.rooms) {
                 sendErrorToSession(session, ServerException(request.name, "Room ${request.name} already exist!"))
+                return
             }
 
             val newRoom = GameRoomManager.createRoom(request.name)
