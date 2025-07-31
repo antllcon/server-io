@@ -55,7 +55,7 @@ class GameRoom(
 
         val map = GameMap.generateDungeonMap()
         this.gameMap = map
-        this.checkpointManager = CheckpointManager(map.route.take(1))
+        this.checkpointManager = CheckpointManager(map.route.take(2))
 
         val initialDirection = when (map.startDirection) {
             GameMap.StartDirection.HORIZONTAL -> Car.DIRECTION_RIGHT
@@ -90,7 +90,7 @@ class GameRoom(
             mapHeight = map.height,
             initialPlayerStates = initialPlayerStates.toList(),
             startDirection = map.startDirection,
-            route = map.route.take(1)
+            route = map.route.take(2)
         )
     }
 
