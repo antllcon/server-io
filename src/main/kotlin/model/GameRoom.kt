@@ -1,7 +1,7 @@
 package mobility.model
 
 import domain.Car
-import domain.CheckpointManager
+import mobility.manager.CheckpointManager
 import domain.GameMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -12,6 +12,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mobility.domain.Vector2D
+import mobility.manager.CollisionManager
 import mobility.service.GameWebSocketHandler
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
@@ -107,7 +108,6 @@ class GameRoom(
 
     private fun startGameLoop(handler: GameWebSocketHandler) {
         if (state != GameRoomState.ONGOING || gameLoopJob?.isActive == true) return
-//        val playersFinished = 0
 
         gameLoopJob = scope.launch {
             var lastTime = System.currentTimeMillis()
@@ -117,11 +117,9 @@ class GameRoom(
                 val deltaTime = (currentTime - lastTime) / 1000f
                 lastTime = currentTime
 
-                // внутри игровая логика
-                // + обработка коллизий в будущем
                 processPlayerInputs(deltaTime)
+                CollisionManager.checkAndResolveCollisions(players)
                 updatePlayersTime(deltaTime)
-//                movePlayers(deltaTime)
                 sendGameStateUpdate(handler)
 
                 delay(serverTickRateMs)
@@ -152,13 +150,8 @@ class GameRoom(
                     directionAngle = newDirection,
                     speedModifier = speedModifier
                 )
-
-                // TODO: Здесь также можно обрабатывать ringsCrossed,
-                // например, обновлять счетчик колец для игрока на сервере.
-                // checkpointManager?.recordCheckpoint(player.car.id, input.ringsCrossed) // Пример
             }
         }
-        // playerInputs.clear()
     }
 
     private fun movePlayers(deltaTime: Float) {

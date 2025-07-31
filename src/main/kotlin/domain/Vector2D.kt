@@ -35,4 +35,20 @@ data class Vector2D(
     operator fun div(scalar: Float): Vector2D {
         return Vector2D(x / scalar, y / scalar)
     }
+
+    operator fun unaryMinus() = Vector2D(-x, -y)
+
+    fun magnitudeSq(): Float {
+        return x * x + y * y
+    }
+
+    fun dot(other: Vector2D): Float {
+        return x * other.x + y * other.y
+    }
+
+    fun magnitude(): Float = sqrt(magnitudeSq())
+    fun normalized(): Vector2D {
+        val mag = magnitude()
+        return if (mag != 0f) this / mag else Zero
+    }
 }

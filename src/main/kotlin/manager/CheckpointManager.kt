@@ -1,7 +1,6 @@
-package domain
+package mobility.manager
 
 import mobility.domain.Vector2D
-import kotlin.collections.getOrNull
 
 class CheckpointManager(private val route: List<Vector2D>) {
     private val carProgress: MutableMap<String, Int> = mutableMapOf()
