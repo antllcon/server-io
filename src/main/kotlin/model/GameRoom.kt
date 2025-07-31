@@ -185,7 +185,7 @@ class GameRoom(
                 posY = player.car!!.position.y,
                 visualDirection = player.car!!.visualDirection,
                 speed = player.car!!.speed,
-                isFinished = false,
+                isFinished = player.isFinished,
             )
         }.toList()
 
