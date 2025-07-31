@@ -289,11 +289,11 @@ class GameWebSocketHandler {
             result.put(player.name, player.secondsAfterStart)
         }
 
-        result.toList().sortedBy { (_, value) -> value }.toMap()
+        val sortedResult = result.toMap().toList().sortedBy { (_, value) -> value }.toMap().toMutableMap()
 
-        logger.info("Sending to room: $result")
+        logger.info("Sending to room: $sortedResult")
 
-        broadcastToRoom(roomId, GameStopResponse(result))
+        broadcastToRoom(roomId, GameStopResponse(sortedResult))
     }
 
     private suspend fun getPlayerIdOrSendError(session: WebSocketSession, context: String): String? {
