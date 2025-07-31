@@ -289,6 +289,8 @@ class GameWebSocketHandler {
             result.put(player.name, player.secondsAfterStart)
         }
 
+        result.toList().sortedBy { (_, value) -> value }.toMap()
+
         logger.info("Sending to room: $result")
 
         broadcastToRoom(roomId, GameStopResponse(result))
