@@ -178,10 +178,6 @@ class GameRoom(
                 )
             }
 
-            if (player.isFinished){
-                logger.info(player.car!!.id)
-            }
-
             // TODO: хз почему car не видно
             PlayerStateDto(
                 id = player.car!!.playerName,
