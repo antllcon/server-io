@@ -58,9 +58,8 @@ class GameRoom(
         this.checkpointManager = CheckpointManager(map.route)
         val initialPlayerStates = mutableListOf<Vector2D>()
 
-        // TODO: подкорректировать
         players.forEachIndexed { index, player ->
-            val startPositionOffset = Vector2D(index * 1f, 0f)
+            val startPositionOffset = Vector2D(index * 0.4f, 0f)
             val basePosition = Vector2D(map.startCellPos.x + 0.2f, map.startCellPos.y + 0.6f)
             val finalPosition = Vector2D(basePosition.x + startPositionOffset.x, basePosition.y + startPositionOffset.y)
 
