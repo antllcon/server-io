@@ -27,7 +27,7 @@ enum class GameRoomState {
 class GameRoom(
     val id: String = (1..6).map { ('A'..'Z').random() }.joinToString(""),
     val name: String,
-    val players: MutableList<Player> = mutableListOf(),
+    var players: MutableList<Player> = mutableListOf(),
     var state: GameRoomState = GameRoomState.LOBBY,
     private val maxPlayers: Int = 6,
 ) {
@@ -179,7 +179,7 @@ class GameRoom(
                 posY = player.car!!.position.y,
                 visualDirection = player.car!!.visualDirection,
                 speed = player.car!!.speed,
-                isFinished = false,
+                isFinished = player.isFinished,
             )
         }.toList()
 

@@ -7,6 +7,7 @@ import mobility.manager.GameRoomManager
 import mobility.model.*
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.log
 
 class GameWebSocketHandler {
 
@@ -103,8 +104,19 @@ class GameWebSocketHandler {
 
         logger.info("Disconnect, ${player.name}")
         val roomId = player.roomId ?: return
+        val room = GameRoomManager.rooms[roomId] ?: return
 
-        broadcastToRoom(roomId, PlayerDisconnectedResponse(playerId))
+        val newPlayersList: MutableList<Player> = mutableListOf()
+
+        for (p in room.players) {
+            if (p.name != player.name) {
+                newPlayersList.add(p)
+            }
+        }
+
+        room.players = newPlayersList
+
+        broadcastToRoom(roomId, PlayerDisconnectedResponse(player.name))
         broadcastToRoom(roomId, PlayerConnectedResponse("", GameRoomManager.getPlayersNames(roomId)))
 
         GameRoomManager.cleanupEmptyRoom(roomId)
@@ -277,9 +289,11 @@ class GameWebSocketHandler {
             result.put(player.name, player.secondsAfterStart)
         }
 
-        logger.info("Sending to room: $result")
+        val sortedResult = result.toMap().toList().sortedBy { (_, value) -> value }.toMap().toMutableMap()
 
-        broadcastToRoom(roomId, GameStopResponse(result))
+        logger.info("Sending to room: $sortedResult")
+
+        broadcastToRoom(roomId, GameStopResponse(sortedResult))
     }
 
     private suspend fun getPlayerIdOrSendError(session: WebSocketSession, context: String): String? {
