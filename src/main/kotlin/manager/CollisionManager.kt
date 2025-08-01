@@ -99,8 +99,8 @@ object CollisionManager {
         val pos = car.position
         val angle = car.visualDirection
         val shrinkFactor = 0.05f
-        val halfW = Car.WIDTH / 2f
-        val halfL = Car.LENGTH / 2f
+        val halfW = (Car.WIDTH * car.sizeModifier) / 2f
+        val halfL = (Car.LENGTH * car.sizeModifier) / 2f
 
         val cosA = cos(angle)
         val sinA = sin(angle)

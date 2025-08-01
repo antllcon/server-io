@@ -1,5 +1,7 @@
 package mobility.model
 
+import manager.ActivePlayerEffect
+import manager.BonusSpawnPoint
 import domain.Car
 import mobility.manager.CheckpointManager
 import domain.GameMap
@@ -11,6 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import manager.BonusType
 import mobility.domain.Vector2D
 import mobility.manager.CollisionManager
 import mobility.service.GameWebSocketHandler
@@ -43,6 +46,8 @@ class GameRoom(
     private var gameMap: GameMap? = null
     private var checkpointManager: CheckpointManager? = null
     val playerInputs = ConcurrentHashMap<String, PlayerInputRequest>()
+    private val bonusSpawnPoints = mutableListOf<BonusSpawnPoint>()
+    private val activePlayerEffects = ConcurrentHashMap<String, ActivePlayerEffect>()
 
     fun isFull(): Boolean = players.size >= maxPlayers
 
@@ -56,6 +61,13 @@ class GameRoom(
         val map = GameMap.generateDungeonMap()
         this.gameMap = map
         this.checkpointManager = CheckpointManager(map.route)
+        bonusSpawnPoints.clear()
+        map.bonusPoints.forEachIndexed { index, bonusPosition ->
+            bonusSpawnPoints.add(
+                BonusSpawnPoint(id = index, position = bonusPosition)
+            )
+        }
+
         val initialPlayerStates = mutableListOf<Vector2D>()
 
         players.forEachIndexed { index, player ->
@@ -89,10 +101,10 @@ class GameRoom(
 
     suspend fun startCountdown(handler: GameWebSocketHandler) {
         withContext(Dispatchers.IO) {
-           for (second in 0 until 6) {
-               delay(1000)
-               handler.broadcastToRoom(id, GameCountdownUpdateResponse(5 - second))
-           }
+            for (second in 0 until 6) {
+                delay(1000)
+                handler.broadcastToRoom(id, GameCountdownUpdateResponse(5 - second))
+            }
         }
 
         state = GameRoomState.ONGOING
@@ -110,12 +122,59 @@ class GameRoom(
                 val deltaTime = (currentTime - lastTime) / 1000f
                 lastTime = currentTime
 
+                updateBonuses(deltaTime, handler)
                 processPlayerInputs(deltaTime)
                 CollisionManager.checkAndResolveCollisions(players)
                 updatePlayersTime(deltaTime)
                 sendGameStateUpdate(handler)
 
                 delay(serverTickRateMs)
+            }
+        }
+    }
+
+    private suspend fun updateBonuses(deltaTime: Float, handler: GameWebSocketHandler) {
+        // Обновляем таймер респавна
+        bonusSpawnPoints.forEach { spawnPoint ->
+            if (!spawnPoint.isActive) {
+                spawnPoint.respawnCooldown -= deltaTime
+                if (spawnPoint.respawnCooldown <= 0) {
+                    spawnPoint.reset()
+                }
+            }
+        }
+
+        // Обновляем таймеры активных эффектов у игроков
+        activePlayerEffects.forEach { (playerId, effect) ->
+            effect.durationRemaining -= deltaTime
+            if (effect.durationRemaining <= 0) {
+                activePlayerEffects.remove(playerId)
+            }
+        }
+
+        // Проверяем подбор бонусов
+        val playersToCheck = players.filter { !it.isFinished && it.car != null }
+        playersToCheck.forEach { player ->
+            val car = player.car!!
+            bonusSpawnPoints.forEach { spawnPoint ->
+                if (spawnPoint.isActive) {
+                    val distance = (car.position - spawnPoint.position).magnitude()
+                    if (distance < 0.5f) {
+                        spawnPoint.onPickup()
+
+                        val effect = ActivePlayerEffect(
+                            playerId = player.id,
+                            type = spawnPoint.type,
+                            durationRemaining = 5.0f
+                        )
+                        activePlayerEffects[player.id] = effect
+
+                        handler.broadcastToRoom(
+                            id,
+                            BonusPickedUpResponse(player.name, spawnPoint.type.name)
+                        )
+                    }
+                }
             }
         }
     }
@@ -131,17 +190,33 @@ class GameRoom(
     private fun processPlayerInputs(deltaTime: Float) {
         players.forEach { player ->
             playerInputs[player.id]?.let { input ->
-                val speedModifier = gameMap?.getSpeedModifier(player.car!!.position) ?: 1f
+                val effect = activePlayerEffects[player.id]
+
+                var speedMultiplier = 1.0f
+                var sizeMultiplier = 1.0f
+
+                if (effect != null) {
+                    when (effect.type) {
+                        BonusType.SPEED_BOOST -> speedMultiplier = 1.5f
+                        BonusType.MASS_INCREASE -> sizeMultiplier = 2.0f
+                    }
+                }
+
+                val carWithBonuses = player.car!!.copy(
+                    bonusSpeedMultiplier = speedMultiplier,
+                    sizeModifier = sizeMultiplier
+                )
+
                 val newDirection = if (input.visualDirection == 0f) {
                     null
                 } else {
                     input.visualDirection
                 }
 
-                player.car = player.car!!.update(
+                player.car = carWithBonuses.update(
                     elapsedTime = deltaTime,
                     directionAngle = newDirection,
-                    speedModifier = speedModifier
+                    speedModifier = speedMultiplier
                 )
             }
         }
@@ -168,7 +243,8 @@ class GameRoom(
                     direction = 0f,
                     visualDirection = 0f,
                     speed = 0f,
-                    isFinished = false
+                    isFinished = false,
+                    sizeModifier = 1f
                 )
             }
 
@@ -180,10 +256,21 @@ class GameRoom(
                 visualDirection = player.car!!.visualDirection,
                 speed = player.car!!.speed,
                 isFinished = player.isFinished,
+                sizeModifier = player.car!!.sizeModifier
             )
         }.toList()
 
-        handler.broadcastToRoom(id, GameStateUpdateResponse(playerStates))
+        val bonusStates = bonusSpawnPoints.map { spawnPoint ->
+            BonusDto(
+                id = spawnPoint.id,
+                type = spawnPoint.type.name,
+                posX = spawnPoint.position.x,
+                posY = spawnPoint.position.y,
+                isActive = spawnPoint.isActive
+            )
+        }
+
+        handler.broadcastToRoom(id, GameStateUpdateResponse(playerStates, bonusStates))
     }
 
 

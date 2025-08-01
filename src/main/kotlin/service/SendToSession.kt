@@ -43,6 +43,7 @@ val AppJson = Json {
             subclass(GameCountdownUpdateResponse::class)
             subclass(GameStateUpdateResponse::class)
             subclass(GameStopResponse::class)
+            subclass(BonusPickedUpResponse::class)
         }
     }
 }

@@ -21,7 +21,9 @@ data class Car(
     val currentSprite: Int = 1,
     var distanceBeforeSpriteChange: Float = DEFAULT_SPRITE_CHANGE_DISTANCE,
     val isStarting: Boolean = false,
-    var wasStopped: Boolean = true
+    var wasStopped: Boolean = true,
+    val bonusSpeedMultiplier: Float = 1.0f,
+    val sizeModifier: Float = 1.0f
 ) {
     private val logger = LoggerFactory.getLogger(Car::class.java)
 
@@ -132,6 +134,7 @@ data class Car(
     }
 
     private fun accelerate() {
+        val maxSpeedWithBonus = MAX_SPEED * bonusSpeedMultiplier
         if (speed < MAX_SPEED) {
             speed += ACCELERATION
         }

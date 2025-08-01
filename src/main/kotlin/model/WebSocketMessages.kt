@@ -28,7 +28,8 @@ enum class ServerMessageType {
     PLAYER_ACTION,
     GAME_COUNTDOWN_UPDATE,
     GAME_STATE_UPDATE,
-    GAME_STOP
+    GAME_STOP,
+    BONUS_PICKED_UP
 }
 
 @Serializable
@@ -82,6 +83,16 @@ data class PlayerStateDto(
     val visualDirection: Float,
     val speed: Float,
     val isFinished: Boolean,
+    val sizeModifier: Float
+)
+
+@Serializable
+data class BonusDto(
+    val id: Int,
+    val type: String,
+    val posX: Float,
+    val posY: Float,
+    val isActive: Boolean
 )
 
 @Serializable
@@ -92,7 +103,7 @@ data class PlayerInputRequest(val visualDirection: Float, val elapsedTime: Float
 
 @Serializable
 @SerialName("PLAYER_FINISHED")
-data class PlayerFinishedRequest(val name: String): ClientMessage {
+data class PlayerFinishedRequest(val name: String) : ClientMessage {
     override val type: ClientMessageType get() = ClientMessageType.PLAYER_FINISHED
 }
 
@@ -226,7 +237,9 @@ data class GameCountdownUpdateResponse(val remainingTime: Int) : ServerMessage {
 
 @Serializable
 @SerialName("GAME_STATE_UPDATE")
-data class GameStateUpdateResponse(val players: List<PlayerStateDto>) : ServerMessage {
+data class GameStateUpdateResponse(
+    val players: List<PlayerStateDto>, val bonuses: List<BonusDto>
+) : ServerMessage {
     override val type: ServerMessageType get() = ServerMessageType.GAME_STATE_UPDATE
 }
 
@@ -234,4 +247,10 @@ data class GameStateUpdateResponse(val players: List<PlayerStateDto>) : ServerMe
 @SerialName("GAME_STOP")
 data class GameStopResponse(val result: MutableMap<String, Float>) : ServerMessage {
     override val type: ServerMessageType get() = ServerMessageType.GAME_STOP
+}
+
+@Serializable
+@SerialName("BONUS_PICKED_UP")
+data class BonusPickedUpResponse(val playerName: String, val bonusType: String) : ServerMessage {
+    override val type: ServerMessageType get() = ServerMessageType.BONUS_PICKED_UP
 }
