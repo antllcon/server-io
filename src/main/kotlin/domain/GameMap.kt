@@ -5,7 +5,7 @@ import kotlin.math.atan2
 import kotlin.random.Random
 
 class GameMap(
-    val grid: Array<IntArray>,
+    private val grid: Array<IntArray>,
     val width: Int,
     val height: Int,
     val startCellPos: Vector2D,
@@ -30,6 +30,7 @@ class GameMap(
         private const val DEFAULT_MAP_HEIGHT = 13
         private const val DEFAULT_CORE_POINT = 13
         private const val DEFAULT_WATER_PROPABILITY = 0.1f
+        private const val DEFAULT_BONUS_PROPABILITY = 0.2f
         private const val EMPTY_CELL_CODE = 0
         private const val CORE_CELL_CODE = 1
         private const val ROAD_CELL_CODE = 2
@@ -52,7 +53,8 @@ class GameMap(
             width: Int = DEFAULT_MAP_WIDTH,
             height: Int = DEFAULT_MAP_HEIGHT,
             roomCount: Int = DEFAULT_CORE_POINT,
-            waterProbability: Float = DEFAULT_WATER_PROPABILITY
+            waterProbability: Float = DEFAULT_WATER_PROPABILITY,
+            bonusProbability: Float = DEFAULT_BONUS_PROPABILITY
         ): GameMap {
             val grid: Array<IntArray> = Array(size = height) { IntArray(size = width) }
             val maxPossibleRooms = ((width - 2) / 2 + 1) * ((height - 2) / 2 + 1)
@@ -63,6 +65,7 @@ class GameMap(
             removeDeadEndsInternal(grid)
 
             createWaterCellsInternal(grid, waterProbability)
+            val generatedBonusPoints =  createBounusCellsInternal(grid, bonusProbability)
             determinationCellTypesInternal(grid)
 
             val startInfo = findStartCellInternal(grid)
@@ -92,6 +95,19 @@ class GameMap(
                 }
             }
 
+
+            val combinedBonusPoints = bonusPoints.toMutableList().apply { addAll(generatedBonusPoints.map { Vector2D(it.first.toFloat(), it.second.toFloat()) }) }
+
+            println("Сгенерил")
+            for(i in 0 until generatedBonusPoints.size) {
+                println("Бонус ${i + 1}: ${generatedBonusPoints[i]}")
+            }
+
+            println("Создал")
+            for (i in 0 until bonusPoints.size) {
+                println("Бонус ${i + 1}: ${bonusPoints[i]}")
+            }
+
             return GameMap(
                 grid = grid,
                 width = width,
@@ -99,7 +115,7 @@ class GameMap(
                 startCellPos = startInfo.position,
                 startAngle = startAngle,
                 route = route,
-                bonusPoints = bonusPoints
+                bonusPoints = combinedBonusPoints
             )
         }
 
@@ -109,19 +125,28 @@ class GameMap(
 
             var generatedRooms = 0
             val maxAttempts = roomCount * 5
-            var attempts = 0
+            val attempts = 0
 
             while (generatedRooms < roomCount && attempts < maxAttempts) {
                 val x: Int = (Random.nextInt(until = (width - 2) / 2 + 1) * 2) + 1
                 val y: Int = (Random.nextInt(until = (height - 2) / 2 + 1) * 2) + 1
 
                 if (x >= 1 && x < width - 1 && y >= 1 && y < height - 1) {
-                    if (grid[y][x] == 0) {
+                    val centerX = width / 2
+                    val centerY = height / 2
+
+                    val minX = centerX - 1
+                    val maxX = centerX + 1
+                    val minY = centerY - 1
+                    val maxY = centerY + 1
+
+                    val notInCenter = !(x in minX..maxX && y in minY..maxY)
+
+                    if (grid[y][x] == 0 && notInCenter) {
                         grid[y][x] = 1
                         generatedRooms++
                     }
                 }
-                attempts++
             }
         }
 
@@ -241,6 +266,26 @@ class GameMap(
             }
         }
 
+        private fun createBounusCellsInternal(
+            grid: Array<IntArray>,
+            bonusProbability: Float
+        ): List<Pair<Int, Int>> {
+            val bonusCells = mutableListOf<Pair<Int, Int>>()
+
+            for (y in 1 until grid.size - 1) {
+                for (x in 1 until grid[y].size - 1) {
+                    if (Random.nextFloat() < bonusProbability) {
+                        when (grid[y][x]) {
+                            ROAD_CELL_CODE -> bonusCells.add(x to y)
+                        }
+                    }
+                }
+            }
+
+            return bonusCells
+        }
+
+
         private fun determinationCellTypesInternal(grid: Array<IntArray>) {
             val height = grid.size
             val width = grid[0].size
@@ -336,7 +381,11 @@ class GameMap(
             }
 
             if (candidateCells.isNotEmpty()) {
-                val (chosenPosition, chosenDirection) = candidateCells.random()
+                println("В текущей итерации - генерация:")
+                for (i in 0 until candidateCells.size) {
+                    println(candidateCells[i])
+                }
+                val (chosenPosition, chosenDirection) = candidateCells[4]
                 if (chosenDirection == StartDirection.HORIZONTAL) {
                     grid[chosenPosition.y.toInt()][chosenPosition.x.toInt()] = 112
                 } else {

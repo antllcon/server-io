@@ -43,7 +43,7 @@ data class Vector2D(
     }
 
     fun dot(other: Vector2D): Float {
-        return x * other.x + y * other.y
+        return x * other.x + y * other.y    
     }
 
     fun magnitude(): Float = sqrt(magnitudeSq())
