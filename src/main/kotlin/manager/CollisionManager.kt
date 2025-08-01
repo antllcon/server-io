@@ -98,6 +98,7 @@ object CollisionManager {
     private fun getCarCorners(car: Car): List<Vector2D> {
         val pos = car.position
         val angle = car.visualDirection
+        val shrinkFactor = 0.05f
         val halfW = Car.WIDTH / 2f
         val halfL = Car.LENGTH / 2f
 
@@ -105,10 +106,10 @@ object CollisionManager {
         val sinA = sin(angle)
 
         val corners = listOf(
-            Vector2D(-halfL, -halfW),
-            Vector2D(halfL, -halfW),
-            Vector2D(halfL, halfW),
-            Vector2D(-halfL, halfW)
+            Vector2D(-halfL * (1f - shrinkFactor), -halfW * (1f - shrinkFactor)),
+            Vector2D(halfL * (1f - shrinkFactor), -halfW * (1f - shrinkFactor)),
+            Vector2D(halfL * (1f - shrinkFactor), halfW * (1f - shrinkFactor)),
+            Vector2D(-halfL * (1f - shrinkFactor), halfW * (1f - shrinkFactor))
         )
 
         return corners.map { c ->
