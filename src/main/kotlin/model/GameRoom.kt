@@ -63,8 +63,9 @@ class GameRoom(
         this.checkpointManager = CheckpointManager(map.route)
         bonusSpawnPoints.clear()
         map.bonusPoints.forEachIndexed { index, bonusPosition ->
+            val newPosition = Vector2D(bonusPosition.x + 0.4f, bonusPosition.y + 0.4f)
             bonusSpawnPoints.add(
-                BonusSpawnPoint(id = index, position = bonusPosition)
+                BonusSpawnPoint(id = index, position = newPosition)
             )
         }
 
